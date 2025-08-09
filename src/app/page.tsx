@@ -24,7 +24,7 @@ export default function Home() {
             </div>
             <div className="title">
               <span style={{ fontSize: 16, fontWeight: 600 }}>
-                Thanh toán khi nhâậnsss akjsnjbjbaujbhuhàng (COD)
+                Thanh toán khi nhận hàng (COD)
               </span>
               <br />sss
               <span style={{ fontSize: 14, fontWeight: 400 }}>
