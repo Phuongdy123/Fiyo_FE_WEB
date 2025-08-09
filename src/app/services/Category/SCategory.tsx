@@ -17,7 +17,7 @@ export const getParentCategoryBySlug = async (
   slug: string
 ): Promise<ICategory | null> => {
   try {
-    const res = await fetch(`http://localhost:3000/category/slug/${slug}`);
+    const res = await fetch(`http://fiyo.click/api/category/slug/${slug}`);
     if (!res.ok) {
       console.error("❌ Lỗi response:", res.status);
       throw new Error("Không tìm thấy danh mục cha theo slug");
@@ -48,7 +48,7 @@ export const getParentCategoryBySlug = async (
 
 
 export const getAllCategoryChilds = async(parentId:string)=>{
-    let res = await fetch(`http://localhost:3000/category/children/${parentId}`);
+    let res = await fetch(`http://fiyo.click/api/category/children/${parentId}`);
     let data = await res.json();
     let categories = data.map((category:ICategory) =>{
         return{
@@ -79,7 +79,7 @@ export const getCategoryBySlugs = async (
   childSlug: string
 ): Promise<ICategory[]> => {
   try {
-    const res = await fetch(`http://localhost:3000/category/${parentSlug}/${childSlug}`);
+    const res = await fetch(`http://fiyo.click/api/category/${parentSlug}/${childSlug}`);
     if (!res.ok) throw new Error("Không tìm thấy danh mục");
 
     const data = await res.json();
@@ -100,7 +100,7 @@ export const getCategoryBySlugs = async (
 
 export const getOneCategory = async (id: string): Promise<ICategory[]> => {
   try {
-    const res = await fetch(`http://localhost:3000/category/${id}`);
+    const res = await fetch(`http://fiyo.click/api/category/${id}`);
     if (!res.ok) throw new Error("Không tìm thấy danh mục");
 
     const data = await res.json();
@@ -126,7 +126,7 @@ export const getAllProductByParentSlug = async (
 ): Promise<ICategory[]> => {
   try {
     const res = await fetch(
-      `http://localhost:3000/category/parent-with-products/${parentSlug}`,
+      `http://fiyo.click/api/category/parent-with-products/${parentSlug}`,
       { cache: "no-store" }
     );
 
@@ -142,7 +142,7 @@ export const getAllProductByParentSlug = async (
 
 export const getParentCategoryById = async (id: string): Promise<ICategory | null> => {
   try {
-    const res = await fetch(`http://localhost:3000/category/${id}`);
+    const res = await fetch(`http://fiyo.click/api/category/${id}`);
     if (!res.ok) throw new Error("Không tìm thấy danh mục cha theo ID");
 
     const data = await res.json();

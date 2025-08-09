@@ -16,7 +16,7 @@ export default function DetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let res = await fetch(`http://localhost:3000/products/${id}`);
+        let res = await fetch(`http://fiyo.click/api/products/${id}`);
         let data = await res.json();
         setProduct(data);
       } catch (error) {

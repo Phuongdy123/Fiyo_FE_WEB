@@ -22,7 +22,7 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     async function fetchOrderDetail() {
       try {
-        const res = await getOrderDetailByUserId(`http://localhost:3000/orderDetail/${id}`);
+        const res = await getOrderDetailByUserId(`http://fiyo.click/api/orderDetail/${id}`);
         setOrderDetail(res);
         console.log("objectsss", res);
       } catch (error) {
@@ -82,7 +82,7 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
       formData.append("order_detail_id", order_detail_id);
       images.forEach((file) => formData.append("images", file));
 
-      const res = await fetch("http://localhost:3000/review", {
+      const res = await fetch("http://fiyo.click/api/review", {
         method: "POST",
         body: formData,
       });

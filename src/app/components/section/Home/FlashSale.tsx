@@ -14,7 +14,7 @@ export default function ProductFlashSaleSection() {
 
   const fetchData = async (page: number) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/pro/?page=${page}&limit=${limit}`);
+      const res = await fetch(`http://fiyo.click/api/products/pro/?page=${page}&limit=${limit}`);
       const data = await res.json();
 
       setListProduct(data.data || []);

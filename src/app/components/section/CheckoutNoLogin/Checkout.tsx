@@ -161,7 +161,7 @@ export default function CheckoutComponent() {
         if (!userId) return;
         // Load default address
         const defaultAddress = await getDefaultAddress(
-          `http://localhost:3000/address/user/${userId}`
+          `http://fiyo.click/api/address/user/${userId}`
         );
         if (defaultAddress) {
           setProvince(defaultAddress.province || "");
@@ -171,7 +171,7 @@ export default function CheckoutComponent() {
           setPhone(defaultAddress.phone || "");
         }
         // Load vouchers
-        const vouchers = await getAllVoucher("http://localhost:3000/voucher");
+        const vouchers = await getAllVoucher("http://fiyo.click/api/voucher");
         setVoucherList(vouchers);
       } catch (error) {
         console.error("Lỗi khi load dữ liệu:", error);
@@ -249,7 +249,7 @@ export default function CheckoutComponent() {
     };
 
     try {
-      const res = await fetch("http://localhost:3000/orders/guess", {
+      const res = await fetch("http://fiyo.click/api/orders/guess", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

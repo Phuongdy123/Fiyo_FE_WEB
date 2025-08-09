@@ -52,10 +52,10 @@ export default function ProductSection() {
 
     const allProducts = activeCategory
       ? await getSaleProductsByCategoryParent(activeCategory)
-      : await getAllSaleProduct("http://localhost:3000/products");
+      : await getAllSaleProduct("http://fiyo.click/api/products");
 
     if (isFilterActive(filter)) {
-      const response = await fetch("http://localhost:3000/products/filter", {
+      const response = await fetch("http://fiyo.click/api/products/filter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ products: allProducts, filters: filter }),
@@ -85,7 +85,7 @@ export default function ProductSection() {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const category = await getAllCategory("http://localhost:3000/category/parents");
+        const category = await getAllCategory("http://fiyo.click/api/category/parents");
         const validCategories = category.filter((item: any) => item._id);
         setCategory(validCategories);
       } catch (error) {

@@ -102,7 +102,7 @@ export default function RegisterFormSection() {
         createdAt: formData.createdAt,
       };
 
-      const res = await fetch("http://localhost:3000/user/register", {
+      const res = await fetch("http://fiyo.click/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

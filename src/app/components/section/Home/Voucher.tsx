@@ -42,7 +42,7 @@ export default function VoucherSection() {
           vouchers = response.vouchers || [];
         } else {
           // Fetch public vouchers if not logged in
-          vouchers = await getAllVoucher("http://localhost:3000/voucher");
+          vouchers = await getAllVoucher("http://fiyo.click/api/voucher");
         }
         // Sort vouchers by expired_at (newest first) and take top 3
         const sortedVouchers = vouchers

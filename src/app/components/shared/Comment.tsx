@@ -16,7 +16,7 @@ export default function CommentComponent({ productId }: CommentComponentProps) {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/review/product/${productId}`);
+        const res = await fetch(`http://fiyo.click/api/review/product/${productId}`);
         const data = await res.json();
 
         const reviewArray = Array.isArray(data)

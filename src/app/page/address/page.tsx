@@ -164,7 +164,7 @@ export default function AddressPage() {
       try {
         if (!userId) return;
         const result = await getAllAddress(
-          `http://localhost:3000/address/user/${userId}`
+          `http://fiyo.click/api/address/user/${userId}`
         );
         console.log("Address List API Response:", result); // Debug the raw data
         const mappedResult = result.map((item: IAddress) => ({
@@ -282,7 +282,7 @@ export default function AddressPage() {
       };
 
       if (editId) {
-        await fetch(`http://localhost:3000/address/${editId}`, {
+        await fetch(`http://fiyo.click/api/address/${editId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(addressData),
@@ -295,7 +295,7 @@ export default function AddressPage() {
 
       closeForm();
       const result = await getAllAddress(
-        `http://localhost:3000/address/user/${userId}`
+        `http://fiyo.click/api/address/user/${userId}`
       );
       const mappedResult = result.map((item: IAddress) => ({
         ...item,

@@ -22,7 +22,7 @@ export default function AccountPage() {
 
       try {
         const orders: IOrder[] = await getOrderByUserId(
-          `http://localhost:3000/orders/user/${userId}`
+          `http://fiyo.click/api/orders/user/${userId}`
         );
         SetOrders(orders);
         console.log(orders);

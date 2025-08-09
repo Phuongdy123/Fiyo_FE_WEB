@@ -140,7 +140,7 @@ export default function AccountPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/user/update/${user?._id}`,
+        `http://fiyo.click/api/user/update/${user?._id}`,
         {
           method: "PATCH",
           body: form,

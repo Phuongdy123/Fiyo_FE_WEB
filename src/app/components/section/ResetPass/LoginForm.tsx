@@ -21,7 +21,7 @@ export default function ForgotPassFormSection() {
     }
 
     try {
-      const res = await fetch("http://localhost:3000/user/reset-password", {
+      const res = await fetch("http://fiyo.click/api/user/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword: password }),
