@@ -26,7 +26,7 @@ export default function Home() {
               <span style={{ fontSize: 16, fontWeight: 600 }}>
                 Thanh toán khi nhận hàng (COD)
               </span>
-              <br />sss
+              <br />
               <span style={{ fontSize: 14, fontWeight: 400 }}>
                 giao hàng toàn quốc
               </span>
