@@ -1,0 +1,212 @@
+.categories{
+    width: 100%;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px; 
+}
+.category-item{
+    width: 20%;
+    height: 50px;
+    text-align: center;
+    line-height: 50px;
+    font-weight: 800;
+    color: black;
+    background-color: rgb(242, 243, 243);
+}
+
+.category-item.active {
+  background-color: red;
+  color: white;
+}
+.category-item:hover{
+    background-color: red;
+    color: rgb(255, 255, 255);
+}
+.banner img{
+    width: 100%;
+}
+.filter-container {
+   
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 8px;
+    margin-bottom: 2vw;
+}
+
+.filter-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #757575; 
+    margin-right: 12px;
+}
+
+.filter-dropdown {
+    display: flex;
+    gap: 16px; 
+}
+
+.filter-button {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333; /* Màu chữ */
+    background-color: #f9f9f9; /* Màu nền */
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-button:hover {
+    background-color: #e0e0e0;
+}
+
+.dropdown-icon {
+    font-size: 12px;
+    color: #999; /* Màu biểu tượng */
+}
+
+.sort-option {
+    margin-left: auto;
+}
+
+.sort-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4a4b4b; /* Màu xanh chữ */
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.sort-link:hover {
+    color: #a60606;
+}
+/* Dropdown Menu */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    display: none; /* Ẩn mặc định */
+    position: absolute;
+    top: 100%; /* Hiển thị bên dưới nút */
+    left: 0;
+    background-color: #fff; /* Màu nền */
+    border-radius: 8px; /* Bo góc */
+    margin-top: 8px; /* Khoảng cách so với nút */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Đổ bóng */
+    list-style: none; /* Xóa bullet của danh sách */
+    padding: 8px 0; /* Khoảng cách bên trong */
+    width: 200px; /* Độ rộng */
+    z-index: 100; /* Lớp trên */
+}
+
+.dropdown-menu li {
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #333; /* Màu chữ */
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Hiệu ứng hover */
+}
+/* Hiển thị menu khi có lớp show */
+.dropdown-menu {
+    display: none;
+    
+}
+
+/* Hiển thị menu khi có lớp show */
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+/* Đánh dấu mục được chọn */
+.dropdown-menu li.active {
+    background-color: #e0e0e0;
+    font-weight: bold;
+    color: #333;
+    
+}
+
+
+
+.dropdown-menu li:hover {
+    background-color: #f1f1f1; /* Màu nền khi hover */
+}
+
+.dropdown:hover .dropdown-menu {
+  
+    z-index: 100; /* Lớp trên */
+}
+
+
+.sort-option .filter-button {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333; /* Màu chữ */
+    background-color: #f9f9f9; /* Màu nền */
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sort-option .filter-button:hover {
+    background-color: #e0e0e0; /* Màu nền khi hover */
+}
+
+/* Dropdown menu */
+.sort-option .dropdown-menu {
+    display: none; /* Ẩn mặc định */
+    position: absolute;
+    top: 100%; /* Hiển thị ngay bên dưới nút */
+    right: 0; /* Căn lề phải */
+    background-color: #fff; /* Màu nền */
+    border: 1px solid #ddd; /* Viền */
+    border-radius: 8px; /* Bo góc */
+    margin-top: 8px; /* Khoảng cách so với nút */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Đổ bóng */
+    list-style: none; /* Xóa bullet của danh sách */
+    padding: 8px 0; /* Khoảng cách bên trong */
+    z-index: 10; /* Đảm bảo hiển thị phía trên */
+    width: 200px; /* Độ rộng */
+}
+
+.sort-option .dropdown-menu li {
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #333; /* Màu chữ */
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Hiệu ứng hover */
+}
+
+.sort-option .dropdown-menu li:hover {
+    background-color: #f1f1f1; /* Màu nền khi hover */
+}
+
+.dropdown-menu {
+    display: none;
+}
+.dropdown-menu.show {
+    display: block;
+}
+/* Không cho mở dropdown nếu bị disabled */
+.dropdown.disabled .dropdown-menu {
+  display: none !important;
+}
+
+.dropdown.disabled .filter-button {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

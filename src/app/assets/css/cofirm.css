@@ -1,0 +1,34 @@
+.confirm-wrapper {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f4f4;
+  padding: 40px 20px;
+}
+
+.confirm-box {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 500px;
+}
+
+.confirm-box .icon {
+  font-size: 60px;
+  color: green;
+  margin-bottom: 20px;
+}
+
+.confirm-box h2 {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.confirm-box p {
+  font-size: 16px;
+  color: #666;
+}
