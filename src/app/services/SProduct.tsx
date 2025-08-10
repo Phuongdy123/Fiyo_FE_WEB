@@ -65,16 +65,16 @@
       
       try {
         // Lấy sản phẩm từ danh mục cha
-        const resParentCategory = await fetch(`http://fiyo.click/api/products/category/${parentCategoryId}`);
+        const resParentCategory = await fetch(`https://fiyo.click/api/products/category/${parentCategoryId}`);
         const parentCategoryProducts = await resParentCategory.json();
 
         // Lấy danh sách danh mục con từ danh mục cha
-        const resChildCategories = await fetch(`http://fiyo.click/api/category/children/${parentCategoryId}`);
+        const resChildCategories = await fetch(`https://fiyo.click/api/category/children/${parentCategoryId}`);
         const childCategories = await resChildCategories.json();
 
         // Lấy sản phẩm từ từng danh mục con
         const childProductsPromises = childCategories.map(async (category: any) => {
-          const resChildProducts = await fetch(`http://fiyo.click/api/products/category/${category._id}`);
+          const resChildProducts = await fetch(`https://fiyo.click/api/products/category/${category._id}`);
           return resChildProducts.json();
         });
 
@@ -98,16 +98,16 @@
     export const getSaleProductsByCategoryParent = async (parentCategoryId: string): Promise<IProduct[]> => {
     try {
       // 1. Lấy sản phẩm từ danh mục cha
-      const resParentCategory = await fetch(`http://fiyo.click/api/products/category/${parentCategoryId}`);
+      const resParentCategory = await fetch(`https://fiyo.click/api/products/category/${parentCategoryId}`);
       const parentCategoryProducts = await resParentCategory.json();
 
       // 2. Lấy danh sách danh mục con từ danh mục cha
-      const resChildCategories = await fetch(`http://fiyo.click/api/category/children/${parentCategoryId}`);
+      const resChildCategories = await fetch(`https://fiyo.click/api/category/children/${parentCategoryId}`);
       const childCategories = await resChildCategories.json();
 
       // 3. Lấy sản phẩm từ từng danh mục con
       const childProductsPromises = childCategories.map(async (category: any) => {
-        const resChildProducts = await fetch(`http://fiyo.click/api/products/category/${category._id}`);
+        const resChildProducts = await fetch(`https://fiyo.click/api/products/category/${category._id}`);
         return resChildProducts.json();
       });
 
@@ -141,11 +141,11 @@ export const getGroupedSaleProducts = async (
 }> => {
   try {
     // 1. Lấy sản phẩm từ danh mục cha
-    const resParentProducts = await fetch(`http://fiyo.click/api/products/category/${parentCategoryId}`);
+    const resParentProducts = await fetch(`https://fiyo.click/api/products/category/${parentCategoryId}`);
     const parentProductsData: IProduct[] = await resParentProducts.json();
 
     // 2. Lấy danh mục con
-    const resChildCategories = await fetch(`http://fiyo.click/api/category/children/${parentCategoryId}`);
+    const resChildCategories = await fetch(`https://fiyo.click/api/category/children/${parentCategoryId}`);
     const childCategories: ICategory[] = await resChildCategories.json();
 
     // 3. Lấy 3 danh mục con đầu tiên (gần nhất)
@@ -154,7 +154,7 @@ export const getGroupedSaleProducts = async (
     // 4. Lấy sản phẩm từ từng danh mục con
     const childrenData = await Promise.all(
       selectedChildren.map(async (cate) => {
-        const res = await fetch(`http://fiyo.click/api/products/category/${cate._id}`);
+        const res = await fetch(`https://fiyo.click/api/products/category/${cate._id}`);
         const data: IProduct[] = await res.json();
 
         return {
@@ -181,7 +181,7 @@ export const getGroupedSaleProducts = async (
 
     export const getRelatedProducts = async (productId: string): Promise<IProduct[]> => {
       try {
-        const res = await fetch(`http://fiyo.click/api/products/related/${productId}`);
+        const res = await fetch(`https://fiyo.click/api/products/related/${productId}`);
         if (!res.ok) {
           throw new Error(`Lỗi API: ${res.status} ${res.statusText}`);
         }

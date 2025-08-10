@@ -9,7 +9,7 @@ export default function ConfirmOrderSuccess() {
   useEffect(() => {
     async function confirmOrder() {
       try {
-        const res = await fetch(`http://fiyo.click/api/orders/confirm-guess/${id}`, {
+        const res = await fetch(`https://fiyo.click/api/orders/confirm-guess/${id}`, {
           method: "PUT",
         });
         const data = await res.json();

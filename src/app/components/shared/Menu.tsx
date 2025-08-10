@@ -15,7 +15,7 @@ export default function MenuComponent() {
     const fetchDataParents = async () => {
       try {
         const res = await getAllCategoryParents(
-          "http://fiyo.click/api/category/parents"
+          "https://fiyo.click/api/category/parents"
         );
         setParentsCategory(res);
       } catch (error) {
@@ -28,7 +28,7 @@ export default function MenuComponent() {
   const fetchSubsCategory = async (parentId: string) => {
     try {
       const res = await getAllCategoryParents(
-        `http://fiyo.click/api/category/children/${parentId}`
+        `https://fiyo.click/api/category/children/${parentId}`
       );
       setSubsCategory(res);
      

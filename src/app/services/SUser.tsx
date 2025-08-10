@@ -2,7 +2,7 @@ import { IUser } from "../untils/IUser";
 
 export const getUserById = async (id: string): Promise<IUser | null> => {
   try {
-    const res = await fetch(`http://fiyo.click/api/user/${id}`);
+    const res = await fetch(`https://fiyo.click/api/user/${id}`);
     const data = await res.json();
 
     if (!res.ok || !data.status) {

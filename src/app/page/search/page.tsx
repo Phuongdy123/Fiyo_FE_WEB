@@ -43,12 +43,12 @@ function SearchContent() {
       try {
         setProducts([]);
         const res = await fetch(
-          `http://fiyo.click/api/products/search?name=${keyword}`
+          `https://fiyo.click/api/products/search?name=${keyword}`
         );
         const data = await res.json();
 
         if (isFilterActive(filter)) {
-          const filterRes = await fetch("http://fiyo.click/api/products/filter", {
+          const filterRes = await fetch("https://fiyo.click/api/products/filter", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ products: data, filters: filter }),

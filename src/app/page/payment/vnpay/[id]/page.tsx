@@ -16,7 +16,7 @@ export default function VnpayPage() {
 
   useEffect(() => {
     if (id) {
-      fetch(`http://fiyo.click/api/orderDetail/${id}`)
+      fetch(`https://fiyo.click/api/orderDetail/${id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.status) {
@@ -60,7 +60,7 @@ export default function VnpayPage() {
     };
 
     try {
-      const res = await fetch('http://fiyo.click/api/orders/vnpay', {
+      const res = await fetch('https://fiyo.click/api/orders/vnpay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),

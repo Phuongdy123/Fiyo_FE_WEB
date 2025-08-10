@@ -35,7 +35,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
   try {
-    const res = await fetch("http://fiyo.click/api/user/login", {
+    const res = await fetch("https://fiyo.click/api/user/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -77,7 +77,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
 
     try {
-      const res = await fetch("http://fiyo.click/api/user/login-google", {
+      const res = await fetch("https://fiyo.click/api/user/login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: credentialResponse.credential }),
@@ -110,7 +110,7 @@ showToast("Đăng nhập thất bại. Vui lòng thử lại.", "error");
       async (response: any) => {
         if (response.authResponse) {
           try {
-            const res = await fetch("http://fiyo.click/api/user/login-facebook", {
+            const res = await fetch("https://fiyo.click/api/user/login-facebook", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

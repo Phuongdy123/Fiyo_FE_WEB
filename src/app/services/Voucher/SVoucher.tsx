@@ -41,7 +41,7 @@ export const getDefaultVoucher = async (url: string): Promise<IVoucher | null> =
   return voucher;
 };
 export const getVoucherByUserId = async (userId: string): Promise<{ userRank: string; vouchers: IVoucher[] }> => {
-  const res = await fetch(`http://fiyo.click/api/voucher/user/${userId}`);
+  const res = await fetch(`https://fiyo.click/api/voucher/user/${userId}`);
   const data = await res.json();
 
   // ❌ bỏ check status này đi

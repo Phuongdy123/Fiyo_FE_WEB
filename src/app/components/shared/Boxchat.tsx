@@ -73,7 +73,7 @@ export default function BoxChatComponent() {
 
         // Call API welcome khi mở chat
         try {
-          const res = await fetch("http://fiyo.click/api/chat/welcome");
+          const res = await fetch("https://fiyo.click/api/chat/welcome");
           // if (!res.ok) throw new Error("Lỗi gọi welcome");
           const data = await res.json();
           const message = data.reply || "Xin chào! Tôi có thể giúp gì cho bạn?";
@@ -163,7 +163,7 @@ export default function BoxChatComponent() {
     addMessage("user", text, true);
 
     try {
-      const response = await fetch("http://fiyo.click/api/chat", {
+      const response = await fetch("https://fiyo.click/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
