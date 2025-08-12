@@ -19,6 +19,12 @@ interface OrderProduct {
       _id: string;
       color: string;
     };
+     size: {
+      _id: string;
+      size: string;
+      sku: string;
+      quantity: number;
+    };
     
   };
 }
@@ -84,7 +90,7 @@ export default function ZalopayPage() {
       products: products.map((item) => ({
         product_id: item.product.product_id,
         variant_id: item.product.variant._id,
-      
+        size_id: item.product.size._id,
         quantity: item.quantity,
       })),
     };

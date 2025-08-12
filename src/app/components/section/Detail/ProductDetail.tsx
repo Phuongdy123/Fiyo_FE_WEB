@@ -60,8 +60,9 @@ export default function DetailSection({ product }: { product: IProduct }) {
     fetchVariants();
   }, [product._id, showToast]);
 
-  const showSale = typeof product.sale === "number" && product.sale > 0;
-  const salePrice = showSale ? product.price * (1 - product.sale / 100) : product.price;
+  // Kiểm tra giá sale là giá cố định
+  const showSale = typeof product.sale === "number" && product.sale > 0 && product.sale < product.price;
+  const salePrice = showSale ? product.sale : product.price;
 
   const handleAddToCart = () => {
     if (!selectedVariant) {
@@ -82,7 +83,7 @@ export default function DetailSection({ product }: { product: IProduct }) {
     addToCart({
       id: product._id,
       name: product.name,
-      price: showSale ? salePrice : product.price,
+      price: salePrice, // Sử dụng salePrice đã tính
       image: product.images?.[0],
       variant: selectedVariant.color,
       size: selectedSize,
@@ -129,10 +130,10 @@ export default function DetailSection({ product }: { product: IProduct }) {
               <div className="price-box">
                 <div className="normal-price">
                   <span className="price">
-                    {(showSale ? salePrice : product.price).toLocaleString("vi-VN")} ₫
+                    {salePrice.toLocaleString("vi-VN")} ₫
                   </span>
                 </div>
-                {showSale && product.sale > 0 && (
+                {showSale && (
                   <span className="old-price">
                     <span className="price-original">
                       {product.price.toLocaleString("vi-VN")} ₫

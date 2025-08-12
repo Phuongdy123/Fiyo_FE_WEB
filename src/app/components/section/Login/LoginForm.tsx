@@ -76,7 +76,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       return;
     }
 
-    try {
+    try { 
       const res = await fetch("https://fiyo.click/api/user/login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
