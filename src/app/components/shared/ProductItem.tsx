@@ -7,6 +7,11 @@ import { IProduct } from "@/app/untils/IProduct";
 export default function ProductItem({ product }: { product: IProduct }) {
   if (!product?.name || !product?.images || product.images.length === 0)
     return null;
+
+  // Kiểm tra nếu có giá sale cố định
+  const showSale = typeof product.sale === "number" && product.sale > 0 && product.sale < product.price;
+  const salePrice = showSale ? product.sale : product.price;
+
   return (
     <>
       <div
@@ -108,13 +113,13 @@ export default function ProductItem({ product }: { product: IProduct }) {
               </div>
             </h4>
             <div className="product-item__price">
-              {product.sale && product.sale > 0 ? (
+              {showSale ? (
                 <>
                   <span className="product-item__price--normal">
-                    {(product.price - product.sale).toLocaleString("vi-VN")} ₫
+                    {salePrice.toLocaleString("vi-VN")} ₫
                   </span>
                   <span className="product-item__price--percent">
-                    -{Math.round((product.sale / product.price) * 100)}%
+                    -{Math.round(((product.price - salePrice) / product.price) * 100)}%
                   </span>
                   <span className="product-item__price--old">
                     {product.price.toLocaleString("vi-VN")} ₫
