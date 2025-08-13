@@ -1565,7 +1565,30 @@ img {
     .menu-toggle {
         display: block; /* Hamburger menu */
     }
+    .minicart {
+    visibility: hidden;
+    opacity: 0;
+    z-index: 1001;
+    background-color: #fff;
+    width: 100%;
+    height: 100%;
+    transition: all .4s;
+    position: fixed;
+    top: 0;
+
+}
     
+.minicart__container {
+    z-index: 5;
+    visibility: hidden;
+    background-color: #fff;
+    width: 100%;
+    transition: all .4s;
+    position: fixed;
+    top: 0;
+    /* right: -580px; */
+}
+
     
 }
 
