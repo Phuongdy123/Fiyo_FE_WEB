@@ -12,30 +12,32 @@ export default function PageNavComponents({
   onPageChange,
 }: Props) {
   const maxPagesToShow = 4;
+  const [pageGroup, setPageGroup] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Tính tổng nhóm trang
   const totalGroups = Math.ceil(totalPages / maxPagesToShow);
 
-  // Trạng thái nhóm trang đang hiển thị (0-based)
-  const [pageGroup, setPageGroup] = useState(0);
-
-  // Khi currentPage thay đổi, cập nhật pageGroup để pageGroup chứa currentPage
   useEffect(() => {
     const newGroup = Math.floor((currentPage - 1) / maxPagesToShow);
     setPageGroup(newGroup);
   }, [currentPage]);
 
-  // Tính trang bắt đầu và kết thúc của nhóm hiện tại
+  // Theo dõi thay đổi kích thước màn hình
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const startPage = pageGroup * maxPagesToShow + 1;
   const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
 
-  // Tạo mảng trang cho nhóm hiện tại
   const pages = [];
   for (let i = startPage; i <= endPage; i++) {
     pages.push(i);
   }
 
-  // Hàm xử lý nút prev nhóm
   const handlePrevGroup = (e: React.MouseEvent) => {
     e.preventDefault();
     if (pageGroup > 0) {
@@ -45,7 +47,6 @@ export default function PageNavComponents({
     }
   };
 
-  // Hàm xử lý nút next nhóm
   const handleNextGroup = (e: React.MouseEvent) => {
     e.preventDefault();
     if (pageGroup < totalGroups - 1) {
@@ -55,6 +56,30 @@ export default function PageNavComponents({
     }
   };
 
+  // Nếu là mobile → hiển thị nút gọn
+  if (isMobile) {
+    return (
+      <div className="toolbar-loadmore">
+        <button
+          className="toolbar-loadmore__button"
+          onClick={(e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+              onPageChange(currentPage + 1);
+            }
+          }}
+        >
+          Xem thêm
+        </button>
+        <div className="toolbar-loadmore__text">
+          Hiển thị <span>{currentPage * maxPagesToShow}</span> trên tổng số{" "}
+          <span>{totalPages * maxPagesToShow}</span> sản phẩm
+        </div>
+      </div>
+    );
+  }
+
+  // Nếu là desktop → hiển thị phân trang số
   return (
     <div className="pagination">
       <a
@@ -62,10 +87,8 @@ export default function PageNavComponents({
         className="page-item first"
         onClick={(e) => {
           e.preventDefault();
-          // Bấm nút "<" để lùi 1 trang, nhưng nếu trang hiện tại là đầu nhóm thì chuyển nhóm trước
           if (currentPage > 1) {
             if (currentPage === startPage) {
-              // Nếu đang ở đầu nhóm thì chuyển nhóm trước
               handlePrevGroup(e);
             } else {
               onPageChange(currentPage - 1);
@@ -95,7 +118,6 @@ export default function PageNavComponents({
         className="page-item last"
         onClick={(e) => {
           e.preventDefault();
-          // Bấm nút ">" để tiến 1 trang, nếu vượt qua nhóm thì chuyển nhóm sau
           if (currentPage < totalPages) {
             if (currentPage === endPage) {
               handleNextGroup(e);

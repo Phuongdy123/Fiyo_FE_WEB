@@ -208,6 +208,7 @@ a{
         position: relative;
     }
     .header__logo {
+        
         margin-right: auto;
         display: flex
     ;
@@ -1508,3 +1509,90 @@ img {
   background-color: #fff;
   color: #000;
 }
+
+/* Mobile */
+@media (max-width: 767px) {
+    .header {
+        flex-wrap: wrap;
+        padding: 8px 12px;
+    }
+    .header__icon-store{
+    display: none;
+    }
+    .header__group-icon {
+        gap: 0px; /* hoặc dùng margin nhỏ hơn */
+    }
+       .header__logo {
+        
+        width: 110px;
+        
+    }
+    .header__search{
+        width: 320px;
+        margin-left: 17vw;
+    }
+        .header__group-icon span {
+        display: none;
+    }
+
+
+  .header__group-icon {
+        padding: 0;
+        margin: 0 -20px; /* giảm khoảng cách hai bên */
+    }
+
+    .header__search-input{
+        font-size: 11px;
+
+    }
+    .header__search-form{
+        height: 37.5px;
+        width: 37vw;
+      
+    }
+
+    .header-nav {
+        display: none; /* Ẩn menu lớn */
+    }
+
+    .header-icons {
+        gap: 10px;
+    }
+    .header__icon{
+        margin-left: -8vw;
+    }
+
+    .menu-toggle {
+        display: block; /* Hamburger menu */
+    }
+    
+    
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .header {
+        padding: 10px 20px;
+    }
+
+    .header-nav {
+        gap: 15px;
+        font-size: 14px;
+    }
+    .header__logo{
+        margin-right: 4vw;
+      
+    }
+
+  
+    .header-icons {
+        gap: 15px;
+    }
+}
+/* Desktop */
+@media (min-width: 1024px) {
+    .header {
+        padding: 12px 40px;
+    }
+}
+

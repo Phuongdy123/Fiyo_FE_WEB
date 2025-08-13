@@ -67,10 +67,10 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <h3>Ưu đãi nổi bậc</h3>
+        <h3 className="home-title">ƯU ĐÃI NỖI BẬC</h3>
         <VoucherSection></VoucherSection>
         <CollectionSection></CollectionSection>
-        <div className="title">
+        <div className="title-home">
           <h2>
             FLASH<span style={{ color: "red" }}>SALE</span>
           </h2>

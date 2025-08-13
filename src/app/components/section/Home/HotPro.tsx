@@ -26,8 +26,8 @@ export default function HotProductSection() {
 
   return (
     <>
-      <div className="title">
-        <h2>SẢN PHẨM BÁN CHẠY</h2>
+      <div className="title-home">
+        <h2>BÁN CHẠY</h2>
       </div>
       <div className="producthot">
         <div className="banner-producthot">
