@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import "@/app/";
+import "@/app/assets/css/cancel.css";
 
 interface CancelOrderModalProps {
   orderId: string;
@@ -28,7 +28,7 @@ export default function CancelOrderModal({
 
   const handleCancel = async () => {
     try {
-      const res = await fetch(`/api/orders/${orderId}/cancel`, {
+      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/cancel`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

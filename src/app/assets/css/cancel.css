@@ -1,0 +1,89 @@
+.cancel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+}
+
+.cancel-modal {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 850px; /* Giới hạn chiều rộng */
+  background: white;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+  transition: bottom 0.3s ease;
+  z-index: 50000;
+}
+
+.cancel-modal.show {
+  bottom: 10%;
+}
+
+.cancel-header {
+  text-align: center;
+  padding: 12px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.cancel-handle {
+  width: 40px;
+  height: 4px;
+  background: #ccc;
+  border-radius: 2px;
+  margin: 0 auto 8px;
+}
+
+.cancel-body {
+  padding: 12px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.cancel-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.cancel-option input[type="radio"] {
+  accent-color: #e53935; /* Đổi màu tick */
+}
+
+.cancel-textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: none;
+}
+
+.cancel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #eee;
+}
+
+.btn {
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.btn-secondary {
+  background: #ccc;
+}
+
+.btn-danger {
+  background: #e53935;
+  color: white;
+}

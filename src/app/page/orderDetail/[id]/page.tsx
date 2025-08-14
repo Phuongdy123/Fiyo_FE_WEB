@@ -10,6 +10,7 @@ import { getOrderDetailByUserId } from "@/app/services/Order/SOrder";
 import SectionReviewForm from "@/app/components/section/Reviews/ReviewForm";
 import { getColorStyle } from "@/app/components/shared/ColorBox";
 import Link from "next/link";
+import CancelOrderModal from "@/app/components/shared/CancelOrderModal";
 
 export default function AccountPage({
   params,
@@ -23,6 +24,8 @@ export default function AccountPage({
   const [rating, setRating] = useState(5);
   const [reviewContent, setReviewContent] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
 
   useEffect(() => {
     async function fetchOrderDetail() {
@@ -565,35 +568,47 @@ export default function AccountPage({
                               </tr>
                             </tfoot>
                           </table>
-                          {(() => {
-                            const latestStatus =
-                              orderDetail?.order?.status_history
-                                ?.slice()
-                                .sort((a: any, b: any) => {
-                                  const dateA = new Date(a.updatedAt);
-                                  const dateB = new Date(b.updatedAt);
-                                  return isNaN(dateB.getTime()) ||
-                                    isNaN(dateA.getTime())
-                                    ? 0
-                                    : dateB.getTime() - dateA.getTime();
-                                })[0]?.status ||
-                              orderDetail?.order?.status_order;
+                        {(() => {
+  const latestStatus =
+    orderDetail?.order?.status_history
+      ?.slice()
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.updatedAt);
+        const dateB = new Date(b.updatedAt);
+        return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
+          ? 0
+          : dateB.getTime() - dateA.getTime();
+      })[0]?.status || orderDetail?.order?.status_order;
 
-                            return latestStatus === "delivered" ? (
-                              <div className="order-details-totals-bottom">
-                                <button
-                                  className="btn btn-primary"
-                                  onClick={() =>
-                                    setShowReviewForm((prev) => !prev)
-                                  }
-                                >
-                                  {showReviewForm
-                                    ? "Đóng đánh giá"
-                                    : "Viết đánh giá"}
-                                </button>
-                              </div>
-                            ) : null;
-                          })()}
+  if (latestStatus === "delivered") {
+    return (
+      <div className="order-details-totals-bottom">
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowReviewForm((prev) => !prev)}
+        >
+          {showReviewForm ? "Đóng đánh giá" : "Viết đánh giá"}
+        </button>
+      </div>
+    );
+  }
+
+  if (latestStatus === "pending") {
+    return (
+      <div className="order-details-totals-bottom">
+        <button
+          className="btn btn-danger"
+          onClick={() => setShowCancelModal(true)}
+        >
+          Hủy đơn hàng
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+})()}
+
                         </div>
                       </div>
                     </div>
@@ -608,6 +623,14 @@ export default function AccountPage({
           </div>
         </div>
       </div>
+      <CancelOrderModal
+  orderId={orderDetail?.order?._id}
+  isOpen={showCancelModal}
+  onClose={() => setShowCancelModal(false)}
+  onSuccess={() => {
+    // reload lại dữ liệu đơn hàng
+  }}
+/>
       <SectionReviewForm
         show={showReviewForm}
         onClose={() => setShowReviewForm(false)}
@@ -624,6 +647,7 @@ export default function AccountPage({
             user_id: product.user_id,
           });
         }}
+        
       />
     </>
   );
