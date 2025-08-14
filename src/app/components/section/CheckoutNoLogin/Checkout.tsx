@@ -29,11 +29,12 @@ export default function CheckoutComponent() {
   const { showToast } = useToast();
   let userId = user?._id;
   const { cart, clearCart } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const total = cart.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
 
-  // Hàm formatPrice từ component đầu tiên
   const formatPrice = (price: number | null | undefined) =>
-    (typeof price === "number" && !isNaN(price))
+    typeof price === "number" && !isNaN(price)
       ? price.toLocaleString("vi-VN") + " ₫"
       : "0 ₫";
 
@@ -43,7 +44,6 @@ export default function CheckoutComponent() {
     "66", "68", "72", "75", "79", "86", "87", "89", "92", "96"
   ];
 
-  // State for address
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [name, setName] = useState("");
@@ -59,8 +59,67 @@ export default function CheckoutComponent() {
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    province: "",
+    ward: "",
+    detailAddress: "",
+  });
 
-  // Initialize voucher from localStorage or sessionStorage
+  // Hàm validate tập trung
+  const validateForm = () => {
+    const errors = {
+      name: "",
+      phone: "",
+      email: "",
+      province: "",
+      ward: "",
+      detailAddress: "",
+    };
+    let isValid = true;
+
+    if (!name.trim()) {
+      errors.name = "Vui lòng nhập họ và tên!";
+      isValid = false;
+    }
+    if (!phone.trim()) {
+      errors.phone = "Vui lòng nhập số điện thoại!";
+      isValid = false;
+    } else if (!/^\d{10}$/.test(phone.trim())) {
+      errors.phone = "Số điện thoại phải có 10 chữ số!";
+      isValid = false;
+    }
+    if (!email.trim()) {
+      errors.email = "Vui lòng nhập địa chỉ email!";
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = "Địa chỉ email không hợp lệ!";
+      isValid = false;
+    }
+    if (!province) {
+      errors.province = "Vui lòng chọn tỉnh/thành phố!";
+      isValid = false;
+    }
+    if (!ward) {
+      errors.ward = "Vui lòng chọn phường/xã!";
+      isValid = false;
+    }
+    if (!detailAddress.trim()) {
+      errors.detailAddress = "Vui lòng nhập địa chỉ chi tiết!";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  // Validate thời gian thực
+  useEffect(() => {
+    validateForm();
+  }, [name, phone, email, province, ward, detailAddress]);
+
   useEffect(() => {
     const initializeVoucher = () => {
       let savedVoucher = sessionStorage.getItem("selectedVoucher");
@@ -88,7 +147,6 @@ export default function CheckoutComponent() {
     initializeVoucher();
   }, []);
 
-  // Fetch provinces
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -117,7 +175,6 @@ export default function CheckoutComponent() {
     fetchProvinces();
   }, []);
 
-  // Fetch wards when province changes
   useEffect(() => {
     if (!province) {
       setWards([]);
@@ -154,12 +211,10 @@ export default function CheckoutComponent() {
     fetchWards();
   }, [province]);
 
-  // Fetch default address and vouchers
   useEffect(() => {
     const fetchData = async () => {
       try {
         if (!userId) return;
-        // Load default address
         const defaultAddress = await getDefaultAddress(
           `https://fiyo.click/api/address/user/${userId}`
         );
@@ -169,8 +224,8 @@ export default function CheckoutComponent() {
           setDetailAddress(defaultAddress.detail || "");
           setName(defaultAddress.name || "");
           setPhone(defaultAddress.phone || "");
+          setMail(defaultAddress.email || "");
         }
-        // Load vouchers
         const vouchers = await getAllVoucher("https://fiyo.click/api/voucher");
         setVoucherList(vouchers);
       } catch (error) {
@@ -182,37 +237,25 @@ export default function CheckoutComponent() {
     if (userId && provinces.length > 0) fetchData();
   }, [userId, provinces]);
 
-  // Handle checkout
   const handleCheckout = async () => {
-    // Kiểm tra giỏ hàng rỗng
+    if (isSubmitting) return;
+
     if (cart.length === 0) {
       showToast("Giỏ hàng trống. Vui lòng thêm sản phẩm để thanh toán!", "error");
       return;
     }
 
-    // Kiểm tra thông tin bắt buộc
-    if (!province || !ward || !detailAddress || !name || !phone) {
-      showToast("Vui lòng nhập đầy đủ thông tin địa chỉ và liên lạc!", "error");
+    if (!validateForm()) {
+      showToast("Vui lòng kiểm tra và điền đầy đủ thông tin!", "error");
       return;
     }
 
-    // Kiểm tra định dạng số điện thoại
-    if (!/^\d{10}$/.test(phone.trim())) {
-      showToast("Số điện thoại phải có 10 chữ số!", "error");
-      return;
-    }
-
-    // Kiểm tra định dạng email (nếu có)
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      showToast("Địa chỉ email không hợp lệ!", "error");
-      return;
-    }
-
-    // Kiểm tra điều kiện voucher
     if (voucher && (total < (voucher.min_total || 0) || total > (voucher.max_total || Infinity))) {
       showToast("Mã ưu đãi không áp dụng được cho đơn hàng này!", "error");
       return;
     }
+
+    setIsSubmitting(true);
 
     const provinceName = provinces.find((p) => p.code === province)?.name || "";
     const wardName = wards.find((w) => w.code === ward)?.name || "";
@@ -259,11 +302,11 @@ export default function CheckoutComponent() {
 
       if (result.status) {
         const orderId = result.order._id;
-        clearCart(); // Xóa giỏ hàng
-        localStorage.removeItem("selectedVoucher"); // Xóa voucher khỏi storage
+        clearCart();
+        localStorage.removeItem("selectedVoucher");
         sessionStorage.removeItem("selectedVoucher");
         showToast("Đặt hàng thành công!", "success");
-        
+
         if (paymentMethod === "vnpay" || paymentMethod === "momo") {
           window.location.href = `/page/payment_guess/${paymentMethod}/${orderId}`;
         } else {
@@ -277,12 +320,14 @@ export default function CheckoutComponent() {
     } catch (error) {
       console.error("Lỗi khi đặt hàng:", error);
       showToast("Lỗi khi gửi đơn hàng!", "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSelectVoucher = (v: IVoucher) => {
     setVoucher(v);
-    localStorage.setItem("selectedVoucher", JSON.stringify(v)); // Lưu voucher
+    localStorage.setItem("selectedVoucher", JSON.stringify(v));
     sessionStorage.setItem("selectedVoucher", JSON.stringify(v));
     setShowVoucherModal(false);
   };
@@ -319,9 +364,11 @@ export default function CheckoutComponent() {
                         onChange={(e) => setName(e.target.value)}
                         className="form-control"
                       />
-                      <span className="valid-error" style={{ display: name.trim() ? "none" : "block", color: "red", fontSize: "12px" }}>
-                        Trường này là bắt buộc
-                      </span>
+                      {formErrors.name && (
+                        <span className="valid-error" style={{ color: "red", fontSize: "12px" }}>
+                          {formErrors.name}
+                        </span>
+                      )}
                     </div>
                   </span>
                   <span className="form-group col-sm-6">
@@ -333,9 +380,11 @@ export default function CheckoutComponent() {
                       onChange={(e) => setPhone(e.target.value)}
                       className="form-control"
                     />
-                    <span className="valid-error" style={{ display: phone.trim() && /^\d{10}$/.test(phone.trim()) ? "none" : "block", color: "red", fontSize: "12px" }}>
-                      {phone.trim() ? "Số điện thoại phải có 10 chữ số" : "Trường này là bắt buộc"}
-                    </span>
+                    {formErrors.phone && (
+                      <span className="valid-error" style={{ color: "red", fontSize: "12px" }}>
+                        {formErrors.phone}
+                      </span>
+                    )}
                   </span>
                   <span className="form-group col-sm-6">
                     <label htmlFor="email">Địa chỉ Email</label>
@@ -346,9 +395,11 @@ export default function CheckoutComponent() {
                       onChange={(e) => setMail(e.target.value)}
                       className="form-control"
                     />
-                    <span className="valid-error" style={{ display: !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? "none" : "block", color: "red", fontSize: "12px" }}>
-                      Địa chỉ email không hợp lệ
-                    </span>
+                    {formErrors.email && (
+                      <span className="valid-error" style={{ color: "red", fontSize: "12px" }}>
+                        {formErrors.email}
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -371,9 +422,11 @@ export default function CheckoutComponent() {
                           </option>
                         ))}
                       </select>
-                      <span className="valid-error" style={{ display: province ? "none" : "block", color: "red", fontSize: "12px" }}>
-                        Trường này là bắt buộc
-                      </span>
+                      {formErrors.province && (
+                        <span className="valid-error" style={{ color: "red", fontSize: "12px" }}>
+                          {formErrors.province}
+                        </span>
+                      )}
                     </div>
                   </span>
                   <span className="form-group col-sm-6">
@@ -395,9 +448,11 @@ export default function CheckoutComponent() {
                           </option>
                         ))}
                       </select>
-                      <span className="valid-error" style={{ display: ward ? "none" : "block", color: "red", fontSize: "12px" }}>
-                        Trường này là bắt buộc
-                      </span>
+                      {formErrors.ward && (
+                        <span className="valid-error" style={{ color: "red", fontSize: "12px" }}>
+                          {formErrors.ward}
+                        </span>
+                      )}
                     </div>
                   </span>
                 </div>
@@ -414,9 +469,11 @@ export default function CheckoutComponent() {
                       value={detailAddress}
                       onChange={(e) => setDetailAddress(e.target.value)}
                     />
-                    <span className="valid-error" style={{ display: detailAddress.trim() ? "none" : "block", color: "red", fontSize: "12px" }}>
-                      Trường này là bắt buộc
-                    </span>
+                    {formErrors.detailAddress && (
+                      <span className="valid-error" style={{ color: "red", fontSize: "12px" }}>
+                        {formErrors.detailAddress}
+                      </span>
+                    )}
                   </div>
                 </div>
               </form>
@@ -430,8 +487,7 @@ export default function CheckoutComponent() {
                     </b>{" "}
                     <br />
                     <span className="shipping-method__option-des">
-                      Thời gian giao hàng tùy thuộc vào điều kiện của đơn vị vận
-                      chuyển. Dự kiến giao hàng: 2-5 ngày
+                      Thời gian giao hàng tùy thuộc vào điều kiện của đơn vị vận chuyển. Dự kiến giao hàng: 2-5 ngày
                     </span>
                   </span>
                   <span className="shipping-method__option-price">{formatPrice(0)}</span>
@@ -483,7 +539,6 @@ export default function CheckoutComponent() {
                   </span>
                 </span>
               </label>
-            
             </div>
           </div>
           <div className="checkout-step checkout-review active">
@@ -633,9 +688,9 @@ export default function CheckoutComponent() {
                         <button
                           onClick={handleCheckout}
                           className="btn btn-primary w-full"
-                          disabled={cart.length === 0 || !name || !phone || !province || !ward || !detailAddress}
+                          disabled={cart.length === 0 || isSubmitting}
                         >
-                          Thanh Toán
+                          {isSubmitting ? "Đang xử lý..." : "Thanh Toán"}
                         </button>
                       </td>
                     </tr>

@@ -4,6 +4,7 @@ export interface IAddress {
   name: string;
   phone: string;
 address: string;
+email?:string,
   is_default?: boolean;
   user_id: string;
   type?: AddressType; 

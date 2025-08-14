@@ -33,13 +33,13 @@ export default function CheckoutComponent() {
   const { showToast } = useToast();
   const userId = user?._id;
   const { cart, clearCart } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false); // Thêm trạng thái isSubmitting
 
   const formatPrice = (price: number | null | undefined) =>
     (typeof price === "number" && !isNaN(price))
       ? price.toLocaleString("vi-VN") + " ₫"
       : "0 ₫";
 
-  // Add formatDate function from VoucherPage
   const formatDate = (dateInput: Date | string | null | undefined) => {
     if (!dateInput) return "";
     const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -125,7 +125,6 @@ export default function CheckoutComponent() {
     detail: "",
   });
 
-  // Hàm kiểm tra tính hợp lệ của form
   const validateForm = () => {
     const errors = {
       name: "",
@@ -164,7 +163,6 @@ export default function CheckoutComponent() {
     return isValid;
   };
 
-  // Initialize voucher from localStorage or sessionStorage
   useEffect(() => {
     const initializeVoucher = () => {
       let savedVoucher = sessionStorage.getItem("selectedVoucher");
@@ -203,7 +201,6 @@ export default function CheckoutComponent() {
     initializeVoucher();
   }, []);
 
-  // Fetch provinces from API and filter for 34 provinces
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -238,7 +235,6 @@ export default function CheckoutComponent() {
     fetchProvinces();
   }, []);
 
-  // Fetch wards when province changes
   useEffect(() => {
     if (!selectedAddress.province) {
       setWards([]);
@@ -275,7 +271,6 @@ export default function CheckoutComponent() {
     fetchWards();
   }, [selectedAddress.province]);
 
-  // Fetch address and voucher data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -316,6 +311,8 @@ export default function CheckoutComponent() {
   }, [cart, voucher]);
 
   const handleCheckout = async () => {
+    if (isSubmitting) return; // Ngăn submit nếu đang xử lý
+
     if (cart.length === 0) {
       showToast("Không có dữ liệu sản phẩm để thanh toán!", "error");
       return;
@@ -333,6 +330,8 @@ export default function CheckoutComponent() {
       showToast("Tổng tiền không hợp lệ. Vui lòng kiểm tra giỏ hàng!", "error");
       return;
     }
+
+    setIsSubmitting(true); // Khóa nút khi bắt đầu gửi request
 
     const data = {
       user_id: user?._id,
@@ -379,6 +378,8 @@ export default function CheckoutComponent() {
     } catch (error) {
       console.error("Lỗi khi đặt hàng:", error);
       showToast("Lỗi khi gửi đơn hàng!", "error");
+    } finally {
+      setIsSubmitting(false); // Mở khóa nút sau khi xử lý xong
     }
   };
 
@@ -464,7 +465,6 @@ export default function CheckoutComponent() {
     selectedAddress.ward &&
     newAddress.detail.trim();
 
-  // Kiểm tra dữ liệu cart trước khi render
   if (!cart || !Array.isArray(cart) || cart.some(item => item.price == null || item.quantity == null)) {
     return (
       <div className="alert alert-danger">
@@ -741,9 +741,9 @@ export default function CheckoutComponent() {
                         <button
                           onClick={handleCheckout}
                           className="btn btn-primary w-full"
-                          disabled={cart.length === 0}
+                          disabled={cart.length === 0 || isSubmitting}
                         >
-                          Thanh toán
+                          {isSubmitting ? "Đang xử lý..." : "Thanh toán"}
                         </button>
                       </td>
                     </tr>
