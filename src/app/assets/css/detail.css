@@ -553,3 +553,50 @@ background-repeat: no-repeat; /* Không lặp lại hình */
   align-items: center;
   margin-bottom: 4px;
 }
+
+@media (max-width: 768px) {
+  .product-box--left {
+    gap: 30px;
+    width: 100%;
+    
+    
+;
+    position: relative;
+     display: flex;
+    flex-direction: column; /* cho ảnh chính và more image xếp dọc */
+    align-items: center;
+  }
+  .product-media{
+    flex-wrap: wrap;
+}
+.product-more-image {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    height: auto;
+}
+.swiper-button-next{
+        right: 0;
+}
+.product-detail-detail{
+        width: 100%;
+}
+.product-code {
+  
+    margin-bottom: 10px;
+    
+;
+}
+.product-price-box {
+    margin-bottom: 10px;
+
+;
+}
+ .addtocart-box {
+    display: flex;
+    flex-direction: column; /* xếp dọc */
+    gap: 8px;
+  }
+
+}
+

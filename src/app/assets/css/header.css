@@ -372,6 +372,7 @@ a{
     right: 0;
     opacity: 1;
 }
+
 .minicart {
     position: fixed;
     top: 0;
@@ -424,17 +425,15 @@ a{
     width: 100%;
     left: 0;
 }
-.minicart__container {
-    position: relative;
-    z-index: 5;
-    width: 580px;
-    position: fixed;
-    top: 0;
-    right: -580px;
-    visibility: hidden;
-    background-color: #fff;
-    transition: .4s;
+.minicart__container{
+  position: relative;   /* hoặc static */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  right: auto;          /* reset mọi rule cũ */
 }
+
 .minicart__body, .minicart__container {
     display: flex
 ;
@@ -1530,6 +1529,7 @@ img {
     .header__search{
         width: 320px;
         margin-left: 17vw;
+        margin-right: 2.5vw;
     }
         .header__group-icon span {
         display: none;
@@ -1565,30 +1565,37 @@ img {
     .menu-toggle {
         display: block; /* Hamburger menu */
     }
-    .minicart {
-    visibility: hidden;
-    opacity: 0;
-    z-index: 1001;
-    background-color: #fff;
-    width: 100%;
-    height: 100%;
-    transition: all .4s;
-    position: fixed;
-    top: 0;
-
-}
-    
-.minicart__container {
-    z-index: 5;
-    visibility: hidden;
-    background-color: #fff;
-    width: 100%;
-    transition: all .4s;
-    position: fixed;
-    top: 0;
-    /* right: -580px; */
+    .minicart__container {
+    width: 100vw;
+    box-sizing: border-box; /* Đảm bảo padding/margin không làm tràn */
 }
 
+.minicart.active {
+    position: fixed; /* Bám theo viewport khi scroll */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh); 
+    z-index: 1000; /* Đảm bảo minicart nằm trên các phần tử khác */
+    overflow-y: auto; /* Cho phép cuộn nội dung bên trong minicart nếu dài */
+    background: #fff; /* Thêm nền để tránh trong suốt */
+    transition: left 0.3s ease; /* Hiệu ứng mượt khi mở/đóng */
+}
+.menu__container {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100vw;
+    -webkit-overflow-scrolling: touch; /* cuộn mượt trên iOS */
+  }
+
+  .menu__container::-webkit-scrollbar {
+    display: none; /* ẩn thanh cuộn */
+  }
+
+  .menu__item {
+    flex-shrink: 0; /* tránh co lại */
+  }
     
 }
 
@@ -1611,6 +1618,7 @@ img {
     .header-icons {
         gap: 15px;
     }
+    
 }
 /* Desktop */
 @media (min-width: 1024px) {

@@ -1537,3 +1537,67 @@ img {
     border-radius: 20px 4px 4px 20px !important;
     text-align: right;
 }
+@media (max-width: 768px) {
+  .chat-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .chat-messages {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .chat-input {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .chat-send-btn {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+ .box-chat {
+  position: fixed;
+
+  right: 20px;
+  z-index: 9999;
+}
+
+  .chat-wrapper .chat-wrapper-inner {
+  bottom: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  
+  left: 0;
+  height: 100vh;
+    max-height: 100vh !important;
+  }
+  .chat-close-wrapper {
+    position: absolute;
+    top: 5px !important;   /* dính sát bên trong */
+    right: 10px !important;
+    z-index: 10001;
+  }
+
+  /* Nếu đang dùng close-btn riêng thì style tương tự */
+  .box-chat .close-btn {
+    position: absolute;
+    top: 10px !important;
+    right: 10px !important;
+    z-index: 10001;
+  }
+  .chat-close-button {
+    background-color: #333f48 !important;
+;
+  }
+}

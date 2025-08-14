@@ -885,13 +885,17 @@ img {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    height: 90px;
+   
   }
   .voucher-content {
     margin-top: 3px;
     flex: 0 0 90%;
     scroll-snap-align: start;
     width: auto;
+    
   }
+ 
   .collections {
     display: flex;
     gap: 15px;
@@ -901,7 +905,7 @@ img {
   }
 
   .collections > * {
-    flex: 0 0 95%; /* hoặc 80% */
+    flex: 0 0 auto; /* hoặc 80% */
     scroll-snap-align: start;
   }
 
@@ -910,7 +914,7 @@ img {
   }
 
   .slick-slide {
-    flex: 0 0 65%; /* Hoặc 80% tùy ý */
+    flex: 0 0 auto; /* Hoặc 80% tùy ý */
     scroll-snap-align: start;
     width: auto !important;
   }
@@ -918,6 +922,20 @@ img {
   /* Ẩn thanh cuộn */
   .slick-slide img {
     width: auto;
+    height: 100%;
+    
+  
+  
+  }
+  .title-home{
+    font-size: 18px !important;
+  }
+  .banner-producthot img{
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+  }
+  .slick-slide{
     height: 300px;
   }
   h3 {
@@ -935,7 +953,7 @@ img {
     display: none;
   }
   .home-title {
-    font-size: 24px !important; /* To hơn bình thường */
+    font-size: 18px !important; /* To hơn bình thường */
     font-weight: 900; /* Đậm nhất */
     text-transform: uppercase;
     color: #333f48; /* Màu chữ */
