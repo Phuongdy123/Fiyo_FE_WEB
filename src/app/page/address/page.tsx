@@ -1,312 +1,174 @@
-"use client";
-import { useEffect, useState } from "react";
+'use client';
 import { useAuth } from "@/app/context/CAuth";
+import { useRouter } from "next/navigation";
 import "@/app/assets/css/account.css";
+import AccountEffects from "@/app/assets/js/account";
+import { useEffect, useState } from "react";
 import LogoutComponent from "../../components/shared/Logout";
 import AccountSiteBar from "@/app/components/shared/AccountSiteBar";
-import { IAddress } from "@/app/untils/IAddress";
-import { addAddress, getAllAddress } from "@/app/services/Address/SAddress";
+import { getUserById } from "@/app/services/SUser";
+import { IUser } from "@/app/untils/IUser";
+import { useToast } from "@/app/context/CToast";
 
-interface Province {
-  code: string;
-  name: string;
-  type: string;
-}
+export default function AccountPage() {
+  const { user, loginUser } = useAuth();
+  const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+  const user_id = user?._id;
+  const [onetuser, setOneUser] = useState<IUser | null>(null);
+  const { showToast } = useToast();
 
-interface Ward {
-  code: string;
-  name: string;
-  type: string;
-  province_code: string;
-}
-
-export default function AddressPage() {
-  const VALID_PROVINCE_CODES = [
-    "01",
-    "26",
-    "04",
-    "11",
-    "12",
-    "14",
-    "20",
-    "22",
-    "38",
-    "40",
-    "42",
-    "02",
-    "10",
-    "19",
-    "25",
-    "27",
-    "33",
-    "31",
-    "37",
-    "45",
-    "48",
-    "51",
-    "52",
-    "56",
-    "66",
-    "68",
-    "72",
-    "75",
-    "79",
-    "86",
-    "87",
-    "89",
-    "92",
-    "96",
-  ];
-
-  const { user } = useAuth();
-  const userId = user?._id;
-
-  const [editId, setEditId] = useState<string | null>(null);
-  const [addressList, setAddressList] = useState<IAddress[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [wards, setWards] = useState<Ward[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoadingWards, setIsLoadingWards] = useState(false);
-
-  const [form, setForm] = useState<IAddress>({
-    name: "",
-    phone: "",
-    address: "",
-    is_default: false,
-    detail: "",
-    type: "Nhà Riêng",
-    user_id: userId || "",
-    province: "",
-    ward: "",
-  });
-
-  const [selectedAddress, setSelectedAddress] = useState({
-    province: "",
-    ward: "",
-  });
-
-  // Fetch provinces from API and filter for 34 provinces
   useEffect(() => {
-    const fetchProvinces = async () => {
-      try {
-        setError(null);
-        const response = await fetch(
-          "https://tinhthanhpho.com/api/v1/new-provinces",
-          {
-            headers: { Accept: "application/json" },
-          }
-        );
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.success) {
-          const filteredProvinces = data.data
-            .filter((province: Province) =>
-              VALID_PROVINCE_CODES.includes(province.code.padStart(2, "0"))
-            )
-            .map((province: Province) => ({
-              ...province,
-              code: province.code.padStart(2, "0"),
-            }));
-          setProvinces(filteredProvinces);
-        } else {
-          throw new Error("API returned success: false");
-        }
-      } catch (error: any) {
-        console.error("Lỗi khi lấy danh sách tỉnh/thành:", error);
-        setError("Không thể lấy danh sách tỉnh/thành. Vui lòng thử lại sau.");
-      }
+    const fetchData = async () => {
+      if (!user_id) return;
+      const data = await getUserById(user_id);
+      setOneUser(data);
     };
-    fetchProvinces();
-  }, []);
+    fetchData();
+  }, [user_id]);
 
-  // Fetch wards from API
+  // State for edit form inputs and errors
+  const [formData, setFormData] = useState({
+    firstName: "",
+    phoneNumber: "",
+    email: "",
+    avatar: null as File | null,
+    gender: "",
+  });
+  const [errors, setErrors] = useState({
+    firstName: "",
+    phoneNumber: "",
+    email: "",
+  });
+
   useEffect(() => {
-    if (!selectedAddress.province) {
-      setWards([]);
-      setError(null);
-      setIsLoadingWards(false);
+    if (onetuser) {
+      setFormData({
+        firstName: onetuser.name || "",
+        phoneNumber: onetuser.phone || "",
+        email: onetuser.email || "",
+        avatar: null,
+        gender: onetuser.gender || "",
+      });
+    }
+  }, [onetuser]);
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const formatDate = (isoDate: string) => {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const openEditForm = () => {
+    setIsEditOpen(true);
+  };
+
+  const closeEditForm = () => {
+    setIsEditOpen(false);
+    setPreviewAvatar(null);
+    setErrors({ firstName: "", phoneNumber: "", email: "" }); // Reset errors when closing
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, avatar: file }));
+      setPreviewAvatar(URL.createObjectURL(file));
+    }
+  };
+
+  const validateField = (name: string, value: string) => {
+    let error = "";
+    switch (name) {
+      case "firstName":
+        if (!value.trim()) error = "Vui lòng nhập họ và tên";
+        break;
+      case "phoneNumber":
+        if (!value.trim()) error = "Vui lòng nhập số điện thoại";
+        else if (!/^\d{10,11}$/.test(value))
+          error = "Số điện thoại phải từ 10-11 số và chỉ chứa số";
+        break;
+      case "email":
+        if (!value.trim()) error = "Vui lòng nhập địa chỉ email";
+        else if (!/^\S+@\S+\.\S+$/.test(value))
+          error = "Địa chỉ email không hợp lệ";
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate all fields on submit
+    const newErrors = {
+      firstName: validateField("firstName", formData.firstName),
+      phoneNumber: validateField("phoneNumber", formData.phoneNumber),
+      email: validateField("email", formData.email),
+    };
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some((error) => error !== "")) {
+      showToast("Vui lòng sửa các lỗi trước khi lưu.", "error");
       return;
     }
 
-    const fetchWards = async () => {
-      try {
-        setError(null);
-        setIsLoadingWards(true);
-        const paddedCode = selectedAddress.province.padStart(2, "0");
-        const response = await fetch(
-          `https://tinhthanhpho.com/api/v1/new-provinces/${paddedCode}/wards`,
-          { headers: { Accept: "application/json" } }
-        );
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.success) {
-          setWards(data.data || []);
-        } else {
-          throw new Error("API returned success: false");
-        }
-      } catch (error: any) {
-        console.error("Lỗi khi lấy danh sách phường/xã:", error);
-        setError("Không thể lấy danh sách phường/xã. Vui lòng thử lại sau.");
-        setWards([]);
-      } finally {
-        setIsLoadingWards(false);
-      }
-    };
-    fetchWards();
-  }, [selectedAddress.province]);
+    const form = new FormData();
+    form.append("name", formData.firstName);
+    form.append("phone", formData.phoneNumber);
+    form.append("email", formData.email);
+    form.append("gender", formData.gender);
 
-  // Fetch address list
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (!userId) return;
-        const result = await getAllAddress(
-          `https://fiyo.click/api/address/user/${userId}`
-        );
-        console.log("Address List API Response:", result); // Debug the raw data
-        const mappedResult = result.map((item: IAddress) => ({
-          ...item,
-          name: item.name || "",
-          phone: item.phone || "",
-          address: item.address || "",
-        }));
-        setAddressList(mappedResult);
-      } catch (error) {
-        console.error("Lỗi khi lấy địa chỉ:", error);
-        setError("Không thể lấy danh sách địa chỉ. Vui lòng thử lại sau.");
-      }
-    };
-    if (provinces.length > 0) {
-      fetchData();
+    if (formData.avatar) {
+      form.append("avatar", formData.avatar);
     }
-  }, [userId, provinces]);
 
-  const openForm = () => {
-    setForm({
-      name: "",
-      phone: "",
-      address: "",
-      is_default: false,
-      detail: "",
-      type: "Nhà Riêng",
-      user_id: userId || "",
-      province: "",
-      ward: "",
-    });
-    setSelectedAddress({ province: "", ward: "" });
-    setEditId(null);
-    setIsOpen(true);
-    setError(null);
-  };
-
-  const openEditForm = (item: IAddress) => {
-    setForm({
-      ...item,
-      name: item.name || "",
-      phone: item.phone || "",
-      address: item.address || "",
-      province: item.province || "",
-      ward: item.ward || "",
-      is_default: item.is_default || false,
-    });
-    setSelectedAddress({
-      province: item.province || "",
-      ward: item.ward || "",
-    });
-    setEditId(item._id || null);
-    setIsOpen(true);
-    setError(null);
-  };
-
-  const closeForm = () => {
-    setIsOpen(false);
-    setEditId(null);
-    setError(null);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({
-      ...prev,
-      type: e.target.value as "Nhà Riêng" | "Công Ty",
-    }));
-  };
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setSelectedAddress((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === "province" && { ward: "" }),
-    }));
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({
-      ...prev,
-      is_default: e.target.checked,
-    }));
-  };
-
-  const handleSave = async () => {
     try {
-      const provinceName =
-        provinces.find((p) => p.code === selectedAddress.province)?.name || "";
-      const wardName =
-        wards.find((w) => w.code === selectedAddress.ward)?.name || "";
-      const fullAddress = `${form.detail || ""}, ${wardName}, ${provinceName}`
-        .replace(/, ,/g, ",")
-        .replace(/,$/, "");
-
-      const addressData: IAddress = {
-        ...form,
-        address: fullAddress,
-        is_default: form.is_default,
-        user_id: userId || "",
-        province: selectedAddress.province,
-        ward: selectedAddress.ward,
-      };
-
-      if (editId) {
-        await fetch(`https://fiyo.click/api/address/${editId}`, {
+      const res = await fetch(
+        `https://fiyo.click/api/user/update/${user?._id}`,
+        {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(addressData),
-        });
-        alert("Cập nhật địa chỉ thành công");
-      } else {
-        await addAddress(addressData);
-        alert("Thêm địa chỉ thành công");
-      }
-
-      closeForm();
-      const result = await getAllAddress(
-        `https://fiyo.click/api/address/user/${userId}`
+          body: form,
+        }
       );
-      const mappedResult = result.map((item: IAddress) => ({
-        ...item,
-        name: item.name || "",
-        phone: item.phone || "",
-        address: item.address || "",
-      }));
-      setAddressList(mappedResult);
-    } catch (error: any) {
-      console.error("Lỗi khi lưu địa chỉ:", error);
-      setError(error.message || "Lỗi khi lưu địa chỉ");
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Cập nhật thành công", "success");
+        window.location.reload();
+        const newUser = await getUserById(user?._id!);
+        if (newUser) {
+          console.log("New user:", newUser);
+          loginUser(newUser);
+          setOneUser(newUser);
+        } else {
+          showToast("Lỗi: Không lấy được thông tin người dùng mới", "error");
+        }
+        setIsEditOpen(false);
+        setPreviewAvatar(null);
+      } else {
+        showToast(`Lỗi: ${data.message}`, "error");
+      }
+    } catch (error) {
+      showToast("Lỗi kết nối", "error");
+      console.error(error);
     }
   };
 
@@ -317,220 +179,344 @@ export default function AddressPage() {
         <div className="account-container">
           <div className="account-main account-main-information">
             <div className="account-information">
-              <span className="account-information__content">
-                <h2>Sổ địa chỉ</h2>
-
-                {error && <div className="alert alert-danger">{error}</div>}
-
-                {addressList.length > 0 ? (
-                  addressList.map((item) => (
-                    <div className="addresses__item" key={item._id}>
-                      <div className="addresses__item-info">
-                        <div className="addresses__item-content">
-                          {item.address}
-                        </div>
-                        <div className="addresses__item-top">
-                          <div className="addresses__item-name">
-                            {item.name}
-                          </div>
-                          <div className="addresses__item-phone">
-                            {item.phone}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="addresses__item-bottom">
-                        <div className="addresses__item-type">
-                          <span>{item.type}</span>
-                        </div>
-                        {item.is_default && (
-                          <div className="addresses__item-default">
-                            <span>Địa chỉ mặc định</span>
-                          </div>
-                        )}
-                        <div className="addresses__item-edit">
-                          <span
-                            className="openModal"
-                            onClick={() => openEditForm(item)}
-                          >
-                            Sửa
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p>Không có địa chỉ nào để hiển thị.</p>
-                )}
-
-                <div className="account-information__bottom">
-                  <button
-                    className="btn btn-primary btn-add"
-                    onClick={openForm}
-                  >
-                    Thêm địa chỉ
-                  </button>
+              <div className="account-mobile__header">
+                <div className="account-mobile__back">
+                  <span className="screen-reader-text">Back</span>
                 </div>
-
-                <div
-                  className={`address-new modal in ${editId ? "edit" : "add"}`}
-                  style={{ display: isOpen ? "flex" : "none" }}
-                >
-                  <div className="modal-backdrop" onClick={closeForm} />
-                  <div className="address-new__container">
-                    <div className="address-new__content">
-                      <div className="address-new__header">
-                        <div className="address-new__close" onClick={closeForm}>
-                          <span className="screen-reader-text">close</span>
-                        </div>
-                        <h4 className="address-new__title">
-                          {editId ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
-                        </h4>
-                      </div>
-                      <div className="address-new__body">
-                        <div className="address-new__form">
-                          <div className="row">
-                            <div className="form-group col-sm-6">
-                              <label>Họ tên</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="nhập họ và tên"
-                                name="name"
-                                onChange={handleChange}
-                                value={form.name || ""}
-                                required
-                              />
-                            </div>
-                            <div className="form-group col-sm-6">
-                              <label>Số điện thoại</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="nhập số điện thoại"
-                                name="phone"
-                                onChange={handleChange}
-                                value={form.phone || ""}
-                                required
-                              />
-                            </div>
-                          </div>
-                          <div className="row">
-                            <div className="form-group col-sm-6">
-                              <label htmlFor="province">Tỉnh / Thành phố</label>
-                              <select
-                                id="province"
-                                className="form-control"
-                                name="province"
-                                value={selectedAddress.province}
-                                onChange={handleSelectChange}
-                                required
-                              >
-                                <option value="" disabled>
-                                  Chọn Tỉnh/Thành phố
-                                </option>
-                                {provinces.map((p) => (
-                                  <option key={p.code} value={p.code}>
-                                    {p.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="form-group col-sm-6">
-                              <label htmlFor="ward">Phường / Xã</label>
-                              <select
-                                id="ward"
-                                className="form-control"
-                                name="ward"
-                                value={selectedAddress.ward}
-                                onChange={handleSelectChange}
-                                required
-                                disabled={!wards.length || isLoadingWards}
-                              >
-                                <option value="" disabled>
-                                  {isLoadingWards
-                                    ? "Đang tải..."
-                                    : "Chọn Phường/Xã"}
-                                </option>
-                                {wards.map((w) => (
-                                  <option key={w.code} value={w.code}>
-                                    {w.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                          {editId && (
-                            <div className="form-group">
-                              <label>Địa chỉ hiện tại</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Tòa nhà, số nhà, tên đường"
-                                name="address"
-                                onChange={handleChange}
-                                value={form.address || ""}
-                              />
-                            </div>
-                          )}
-
-                          <div className="form-group">
-                            <label>Địa chỉ chi tiết</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="Tòa nhà, số nhà, tên đường"
-                              name="detail"
-                              onChange={handleChange}
-                              value={form.detail || ""}
-                            />
-                          </div>
-
-                          <div className="form-group form-address-type">
-                            <label>Loại địa chỉ</label>
-                            <div className="control">
-                              {["Nhà Riêng", "Công Ty"].map((type) => (
-                                <label key={type} className="radio">
-                                  <input
-                                    type="radio"
-                                    name="type"
-                                    value={type}
-                                    onChange={handleRadioChange}
-                                    checked={form.type === type}
-                                  />
-                                  <span>{type}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="form-checkbox">
-                            <input
-                              type="checkbox"
-                              id="checkbox1"
-                              checked={form.is_default}
-                              onChange={handleCheckboxChange}
-                            />
-                            <label htmlFor="checkbox1">
-                              <span>Đặt làm địa chỉ mặc định</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="address-new__footer">
-                        <button
-                          className="address-new__button--save btn btn-primary"
-                          onClick={handleSave}
-                        >
-                          Lưu địa chỉ
-                        </button>
-                      </div>
+                <h1 className="account-mobile__title">Thông tin tài khoản</h1>
+              </div>
+              <div className="account-information__header account__page-header account__page-header--desktop">
+                <h1 className="account-information__title">
+                  Thông tin tài khoản
+                </h1>
+              </div>
+              <span className="account-information__content">
+                <form className="form">
+                  <input type="hidden" name="lastname" defaultValue="-" />
+                  <div className="form-group form-gender">
+                    <div className="label">Giới tính</div>
+                    <div className="control">
+                      <label>
+                        <input
+                          type="radio"
+                          name="gender"
+                          id="Nam"
+                          checked={
+                            onetuser?.gender === "Nam" || user?.gender === "Nam"
+                          }
+                          disabled
+                        />
+                        <span>Nam</span>
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="gender"
+                          id="Nữ"
+                          checked={
+                            onetuser?.gender === "Nữ" || user?.gender === "Nữ"
+                          }
+                          disabled
+                        />
+                        <span>Nữ</span>
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="gender"
+                          id="Khác"
+                          checked={
+                            onetuser?.gender === "Khác" ||
+                            user?.gender === "Khác"
+                          }
+                          disabled
+                        />
+                        <span>Khác</span>
+                      </label>
                     </div>
                   </div>
-                </div>
+                  <div>
+                    <div id="firstName" className="form-group has-text">
+                      <label
+                        htmlFor="firstName"
+                        className="will-change will-change-active"
+                        style={{ willChange: "font-size" }}
+                      >
+                        Họ và tên
+                      </label>
+                      <input
+                        type="text"
+                        name="firstname"
+                        id="firstName"
+                        className="form-control"
+                        defaultValue={onetuser?.name || user?.name || ""}
+                        readOnly
+                        style={{ outline: "none" }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div id="phoneNumber" className="form-group has-text">
+                      <label
+                        htmlFor="phoneNumber"
+                        className="will-change will-change-active"
+                        style={{ willChange: "font-size" }}
+                      >
+                        Số điện thoại
+                      </label>
+                      <input
+                        type="number"
+                        name="phoneNumber"
+                        id="phoneNumber"
+                        className="form-control"
+                        defaultValue={onetuser?.phone || user?.phone || ""}
+                        readOnly={!!(onetuser?.phone || user?.phone)} // Chỉ readOnly nếu có giá trị
+                        style={{ outline: "none" }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div id="email" className="form-group has-text">
+                      <label
+                        htmlFor="email"
+                        className="will-change will-change-active"
+                        style={{ willChange: "font-size" }}
+                      >
+                        Địa chỉ Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        className="form-control"
+                        defaultValue={onetuser?.email || user?.email || ""}
+                        readOnly
+                        style={{ outline: "none" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group active">
+                    <label>Sinh Nhật</label>
+                    <input
+                      type="text"
+                      name="createdAt"
+                      className="form-control"
+                      defaultValue={
+                        formatDate(onetuser?.createdAt || user?.createdAt || "")
+                      }
+                      readOnly
+                    />
+                  </div>
+                  <div className="form-group active"></div>
+                  <div className="account-information__bottom">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-save"
+                      onClick={openEditForm}
+                    >
+                      Sửa thông tin
+                    </button>
+                  </div>
+                </form>
               </span>
             </div>
           </div>
           <AccountSiteBar />
         </div>
+
+        <div
+          className={`edit-overlay ${isEditOpen ? "show" : "hidden"}`}
+          onClick={closeEditForm}
+        >
+          <div
+            className="edit-form-container"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="edit-close-button" onClick={closeEditForm}>
+              ✖
+            </button>
+            <div className="account-main-mini account-main-information">
+              <div className="account-information">
+                <div className="account-mobile__header">
+                  <div className="account-mobile__back">
+                    <span className="screen-reader-text">Back</span>
+                  </div>
+                  <h1 className="account-mobile__title">Thông tin tài khoản</h1>
+                </div>
+                <div className="account-information__header account__page-header account__page-header--desktop">
+                  <h1 className="account-information__title">
+                    Thông tin tài khoản
+                  </h1>
+                </div>
+                <span className="account-information__content">
+                  <form className="form" onSubmit={handleSubmit}>
+                    <input type="hidden" name="lastname" defaultValue="-" />
+                    <div className="form-group form-gender">
+                      <div className="label">Giới tính</div>
+                      <div className="control">
+                        <label>
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="Nam"
+                            checked={formData.gender === "Nam"}
+                            onChange={handleInputChange}
+                          />
+                          <span>Nam</span>
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="Nữ"
+                            checked={formData.gender === "Nữ"}
+                            onChange={handleInputChange}
+                          />
+                          <span>Nữ</span>
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name="gender"
+                            value="Khác"
+                            checked={formData.gender === "Khác"}
+                            onChange={handleInputChange}
+                          />
+                          <span>Khác</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <div id="firstName" className="form-group has-text">
+                        <label
+                          htmlFor="firstName"
+                          className="will-change will-change-active"
+                        >
+                          Họ và tên
+                        </label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          required
+                          id="firstName"
+                          className="form-control"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          style={{ outline: "none" }}
+                        />
+                        {errors.firstName && (
+                          <span className="sf-input__error-message">
+                            {errors.firstName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div id="phoneNumber" className="form-group has-text">
+                        <label
+                          htmlFor="phoneNumber"
+                          className="will-change will-change-active"
+                        >
+                          Số điện thoại
+                        </label>
+                        <input
+                          type="number"
+                          name="phoneNumber"
+                          required
+                          id="phoneNumber"
+                          className="form-control"
+                          value={formData.phoneNumber}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              phoneNumber: e.target.value,
+                            }))
+                          }
+                          disabled={!!(onetuser?.phone || user?.phone)} // Disable nếu user đã có sđt lưu trong hệ thống
+                          onBlur={handleBlur}
+                          style={{ outline: "none" }}
+                        />
+                        {errors.phoneNumber && (
+                          <span className="sf-input__error-message">
+                            {errors.phoneNumber}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div id="email" className="form-group has-text">
+                        <label
+                          htmlFor="email"
+                          className="will-change will-change-active"
+                        >
+                          Địa chỉ Email
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          required
+                          id="email"
+                          className="form-control"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          style={{ outline: "none" }}
+                        />
+                        {errors.email && (
+                          <span className="sf-input__error-message">
+                            {errors.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="form-group active">
+                      <label>Hình ảnh đại diện</label>
+                      <input
+                        type="file"
+                        name="avatar"
+                        className="form-control"
+                        id="avatar"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                      />
+                      <div style={{ marginTop: "15px" }}>
+                        {previewAvatar && (
+                          <>
+                            <label>Ảnh xem trước:</label>
+                            <div>
+                              <img
+                                src={previewAvatar}
+                                alt="Avatar preview"
+                                style={{
+                                  width: "60px",
+                                  height: "60px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                  border: "1px solid #ccc",
+                                  marginTop: "5px",
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="account-information__bottom">
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-save"
+                      >
+                        Lưu Thông Tin
+                      </button>
+                    </div>
+                  </form>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <AccountEffects />
       </div>
     </>
   );

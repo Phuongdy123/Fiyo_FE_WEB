@@ -979,9 +979,9 @@ table {
 
 .site-header {
     background-color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 505;
+    position: sticky !important; /* Đảm bảo không bị ghi đè */
+    top: 0 !important;
+    z-index: 1000; /* Tăng z-index để chắc chắn */
 }
 .menu__submenu-label {
   position: absolute;
@@ -1620,10 +1620,15 @@ img {
     }
     
 }
-/* Desktop */
-@media (min-width: 1024px) {
-    .header {
-        padding: 12px 40px;
-    }
+.site-header {
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 505;
 }
 
+@media (min-width: 1024px) {
+    .site-header {
+        top: 0; /* Đảm bảo không có khoảng cách */
+    }
+}

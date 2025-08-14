@@ -187,7 +187,7 @@ export default function LoginFormSection() {
   }}
 >
   <a
-    href="quenmatkhau.html"
+    href="/page/forgotpass"
     className="back-link"
     style={{ textDecoration: "none", color: "inherit" }}
   >

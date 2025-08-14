@@ -12,6 +12,8 @@ body {
 .nav {
   z-index: 10; /* Ưu tiên thấp hơn giỏ hàng */
 }
+
+
 .slideshow-container {
   position: relative;
   max-width: 100%;
@@ -669,7 +671,7 @@ img {
   bottom: 90px;
   right: 20px;
   z-index: 300;
-  background-color: #edf1f5;
+  background-color: #cecdcdbe;
   border-radius: 100%;
 }
 .screen-reader-text {

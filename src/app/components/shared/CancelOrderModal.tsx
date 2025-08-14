@@ -1,6 +1,7 @@
-"use client";
+'use client';
 import { useState } from "react";
 import "@/app/assets/css/cancel.css";
+import { useToast } from "@/app/context/CToast";
 
 interface CancelOrderModalProps {
   orderId: string;
@@ -17,6 +18,7 @@ export default function CancelOrderModal({
 }: CancelOrderModalProps) {
   const [reason, setReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
+  const { showToast } = useToast();
 
   const reasons = [
     "Tôi muốn thay đổi địa chỉ giao hàng",
@@ -38,11 +40,11 @@ export default function CancelOrderModal({
 
       if (!res.ok) throw new Error("Hủy đơn thất bại");
 
-      alert("Hủy đơn thành công");
+      showToast("Hủy đơn thành công", "success");
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      alert("Hủy đơn thất bại");
+      showToast("Hủy đơn thất bại", "error");
     }
   };
 

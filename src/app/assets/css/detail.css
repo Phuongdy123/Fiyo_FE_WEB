@@ -25,6 +25,10 @@
     display: flex;
 }
 
+.product-info-detailed .item-title.expanded:after {
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIuODEyNSA5SDE1LjE4NzUiIHN0cm9rZT0iIzMzM0Y0OCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==); /* icon dấu trừ */
+}
+
 .breadcrumbs .items a {
     color: #74869b;
     font-weight: 500;

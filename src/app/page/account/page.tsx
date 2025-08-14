@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useAuth } from "@/app/context/CAuth";
 import { useRouter } from "next/navigation";
 import "@/app/assets/css/account.css";
@@ -8,12 +8,14 @@ import LogoutComponent from "../../components/shared/Logout";
 import AccountSiteBar from "@/app/components/shared/AccountSiteBar";
 import { getUserById } from "@/app/services/SUser";
 import { IUser } from "@/app/untils/IUser";
+import { useToast } from "@/app/context/CToast";
 
 export default function AccountPage() {
   const { user, loginUser } = useAuth();
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const user_id = user?._id;
   const [onetuser, setOneUser] = useState<IUser | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,7 +126,7 @@ export default function AccountPage() {
     setErrors(newErrors);
 
     if (Object.values(newErrors).some((error) => error !== "")) {
-      alert("Vui lòng sửa các lỗi trước khi lưu.");
+      showToast("Vui lòng sửa các lỗi trước khi lưu.", "error");
       return;
     }
 
@@ -149,7 +151,7 @@ export default function AccountPage() {
 
       const data = await res.json();
       if (res.ok) {
-        alert("Cập nhật thành công");
+        showToast("Cập nhật thành công", "success");
         window.location.reload();
         const newUser = await getUserById(user?._id!);
         if (newUser) {
@@ -157,15 +159,15 @@ export default function AccountPage() {
           loginUser(newUser);
           setOneUser(newUser);
         } else {
-          alert("Lỗi: Không lấy được thông tin người dùng mới");
+          showToast("Lỗi: Không lấy được thông tin người dùng mới", "error");
         }
         setIsEditOpen(false);
         setPreviewAvatar(null);
       } else {
-        alert("Lỗi: " + data.message);
+        showToast(`Lỗi: ${data.message}`, "error");
       }
     } catch (error) {
-      alert("Lỗi kết nối");
+      showToast("Lỗi kết nối", "error");
       console.error(error);
     }
   };

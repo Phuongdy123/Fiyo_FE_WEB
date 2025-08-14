@@ -11,6 +11,7 @@ import { AuthProvider } from './context/CAuth';
 import { ToastProvider } from './context/CToast';
 import BoxChatComponent from './components/shared/Boxchat';
 import { MinicartProvider } from "./context/MinicartContext";
+import BackToTop from './components/shared/BacktoTop';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <HeaderSection />
                   <ToastProvider>
                     {children}
+                    <BackToTop></BackToTop>
                   </ToastProvider>
                 </MinicartProvider>
                 <BoxChatComponent />
