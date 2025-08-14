@@ -22,7 +22,6 @@ export default function FilterSection({
 
   const updateFilter = (key: keyof IFilter, value: any) => {
     const prevValue = filters[key];
-
     const newValue =
       typeof value === "string" && typeof prevValue === "string"
         ? prevValue.toLowerCase() === value.toLowerCase()
@@ -43,11 +42,28 @@ export default function FilterSection({
   useEffect(() => {
     const FetchData = async () => {
       try {
-        const parentCategoryId = categorybyslug[0].parentId;
-        let category = await getAllCategoryChilds(parentCategoryId);
-        SetCategory(category);
+        if (!categorybyslug || categorybyslug.length === 0) return;
+
+        const currentCategory = categorybyslug[0];
+        let targetParentId: string | null = null;
+
+        if (currentCategory.parentId) {
+          // Đang ở danh mục con → lấy các danh mục cùng cấp
+          targetParentId = currentCategory.parentId;
+        } else {
+          // Đang ở danh mục cha → lấy danh mục con của nó
+          targetParentId = currentCategory._id;
+        }
+
+        if (targetParentId) {
+          const categoryList = await getAllCategoryChilds(targetParentId);
+          SetCategory(categoryList);
+        } else {
+          SetCategory([]);
+        }
       } catch (error) {
-        console.log("Lỗi khi lấy thông tin danh mục");
+        console.log("Lỗi khi lấy thông tin danh mục", error);
+        SetCategory([]);
       }
     };
     FetchData();
@@ -213,12 +229,12 @@ export default function FilterSection({
           <div className="filter__item-content">
             <div className="filter__options filter__options--price price-range">
               <div className="price-range-slide">
-               <span className="range-value min">
-  {(filters.minPrice ?? 99000).toLocaleString("vi-VN")}đ
-</span>
-<span className="range-value max">
-  {(filters.maxPrice ?? 399000).toLocaleString("vi-VN")}đ
-</span>
+                <span className="range-value min">
+                  {(filters.minPrice ?? 99000).toLocaleString("vi-VN")}đ
+                </span>
+                <span className="range-value max">
+                  {(filters.maxPrice ?? 399000).toLocaleString("vi-VN")}đ
+                </span>
 
                 <div className="track-container">
                   <div className="track" />

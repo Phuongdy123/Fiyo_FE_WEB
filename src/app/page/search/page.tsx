@@ -1,10 +1,10 @@
 "use client";
 
-import FilterEffectJS from "@/app/assets/js/filter";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import "@/app/assets/css/product-page.css";
 import ProductList from "../../components/shared/ListProduct";
+import PageNavComponents from "../../components/shared/PageNav";
 import { IProduct } from "@/app/untils/IProduct";
 import { IFilter } from "@/app/untils/IFilter";
 
@@ -12,7 +12,11 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
 
-  const [products, setProducts] = useState<IProduct[]>([]);
+  const [allProducts, setAllProducts] = useState<IProduct[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 8;
+
   const [filter, setFilter] = useState<IFilter>({
     size: null,
     color: null,
@@ -36,38 +40,55 @@ function SearchContent() {
   const [openSort, setOpenSort] = useState(false);
   const adultSizes = ["S", "M", "L", "XL", "XXL"];
 
+  const applyFilters = async (data: IProduct[]) => {
+    let list = [...data];
+
+    // Lọc hidden
+    list = list.filter((p) => p.isHidden === false || p.isHidden === undefined);
+
+    // Lọc qua API filter nếu có filter đang bật
+    if (isFilterActive(filter)) {
+      const filterRes = await fetch("https://fiyo.click/api/products/filter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ products: list, filters: filter }),
+      });
+      const filterData = await filterRes.json();
+      list = filterData.status ? filterData.data : [];
+    }
+
+    return list;
+  };
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(
+        `https://fiyo.click/api/products/search?name=${keyword}`
+      );
+      const data = await res.json();
+
+      const filteredList = await applyFilters(data);
+
+      setAllProducts(filteredList);
+      setTotalPages(Math.ceil(filteredList.length / limit));
+      setCurrentPage(1); // reset về trang 1 khi tìm mới
+    } catch (err) {
+      console.error("Lỗi khi tìm kiếm sản phẩm:", err);
+    }
+  };
+
   useEffect(() => {
-    if (!keyword) return;
-
-    const fetchData = async () => {
-      try {
-        setProducts([]);
-        const res = await fetch(
-          `https://fiyo.click/api/products/search?name=${keyword}`
-        );
-        const data = await res.json();
-
-        if (isFilterActive(filter)) {
-          const filterRes = await fetch("https://fiyo.click/api/products/filter", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ products: data, filters: filter }),
-          });
-          const filterData = await filterRes.json();
-
-          setProducts(filterData.status ? filterData.data : []);
-        } else {
-          setProducts(data);
-        }
-      } catch (err) {
-        console.error("Lỗi khi tìm kiếm sản phẩm:", err);
-      }
-    };
-
-    fetchData();
+    if (keyword) {
+      fetchData();
+    }
   }, [keyword, filter]);
 
   if (!keyword) return <p>Không có từ khóa tìm kiếm.</p>;
+
+  // Tính sản phẩm của trang hiện tại
+  const indexOfLast = currentPage * limit;
+  const indexOfFirst = indexOfLast - limit;
+  const currentProducts = allProducts.slice(indexOfFirst, indexOfLast);
 
   return (
     <div className="main-content">
@@ -79,9 +100,10 @@ function SearchContent() {
         </ul>
       </div>
 
-      <span className="dropdown-title">
-        Kết quả cho <strong>"{keyword}"</strong>
-      </span>
+     <span className="dropdown-title">
+  Kết quả cho <strong>"{keyword}"</strong> — Tổng số{" "}
+  <strong>{allProducts.length}</strong> sản phẩm
+</span>
 
       {/* Filter */}
       <div className="filter-container" style={{ marginTop: "2vw" }}>
@@ -95,7 +117,7 @@ function SearchContent() {
               <span className="dropdown-icon">▼</span>
             </button>
             {openPrice && (
-              <ul className={`dropdown-menu ${openPrice ? "show" : ""}`}>
+              <ul className="dropdown-menu show">
                 <li onClick={() => { setFilter({ ...filter, minPrice: 0, maxPrice: 100000 }); setOpenPrice(false); }}>
                   Giá dưới 100.000đ
                 </li>
@@ -122,7 +144,7 @@ function SearchContent() {
               <span className="dropdown-icon">▼</span>
             </button>
             {openSize && (
-              <ul className={`dropdown-menu ${openSize ? "show" : ""}`}>
+              <ul className="dropdown-menu show">
                 {adultSizes.map((size) => (
                   <li key={size} onClick={() => { setFilter({ ...filter, size }); setOpenSize(false); }}>
                     {size}
@@ -140,7 +162,7 @@ function SearchContent() {
             <span className="dropdown-icon">▼</span>
           </button>
           {openSort && (
-            <ul className={`dropdown-menu ${openSort ? "show" : ""}`}>
+            <ul className="dropdown-menu show">
               <li onClick={() => { setFilter({ ...filter, sort: "price_asc" }); setOpenSort(false); }}>
                 Theo giá tăng dần
               </li>
@@ -157,17 +179,26 @@ function SearchContent() {
 
       {/* Product List */}
       <div className="products-grid">
-        {products.length === 0 ? (
+        {currentProducts.length === 0 ? (
           <p style={{ fontSize: 16, padding: "2rem", color: "gray" }}>
             Không tìm thấy sản phẩm phù hợp với từ khóa "
             <strong>{keyword}</strong>"
           </p>
         ) : (
           <div className="product-items-new">
-            <ProductList products={products} />
+            <ProductList products={currentProducts} />
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <PageNavComponents
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      )}
     </div>
   );
 }

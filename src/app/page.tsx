@@ -5,7 +5,7 @@ import CollectionSection from './components/section/Home/Collection';
 import HotProductSection from "./components/section/Home/HotPro";
 import LoadingPage from './components/LoadingPage';
 import ProductFlashSaleSection from "./components/section/Home/FlashSale";
-import ProductBottomSection from "./components/section/Home/ProductBottom copy";
+import ProductBottomSection from "./components/section/Home/ProductBottom";
 import ProductTopSection from "./components/section/Home/ProductTop";
 
 export default function Home() {

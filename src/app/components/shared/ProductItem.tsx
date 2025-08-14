@@ -5,11 +5,15 @@ import Link from "next/link";
 import { IProduct } from "@/app/untils/IProduct";
 
 export default function ProductItem({ product }: { product: IProduct }) {
-  if (!product?.name || !product?.images || product.images.length === 0)
+  // Chặn render nếu thiếu tên, ảnh hoặc bị ẩn
+  if (!product?.name || !product?.images || product.images.length === 0 || product.isHidden)
     return null;
 
-  // Kiểm tra nếu có giá sale cố định
-  const showSale = typeof product.sale === "number" && product.sale > 0 && product.sale < product.price;
+  // Kiểm tra nếu có giá sale hợp lệ
+  const showSale =
+    typeof product.sale === "number" &&
+    product.sale > 0 &&
+    product.sale < product.price;
   const salePrice = showSale ? product.sale : product.price;
 
   return (
