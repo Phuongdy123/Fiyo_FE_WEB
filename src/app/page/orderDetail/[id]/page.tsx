@@ -11,7 +11,11 @@ import SectionReviewForm from "@/app/components/section/Reviews/ReviewForm";
 import { getColorStyle } from "@/app/components/shared/ColorBox";
 import Link from "next/link";
 
-export default function AccountPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AccountPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   // Unwrap params using React.use
   const { id } = use(params);
   const [orderDetail, setOrderDetail] = useState<any>(null);
@@ -23,7 +27,9 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     async function fetchOrderDetail() {
       try {
-        const res = await getOrderDetailByUserId(`https://fiyo.click/api/orderDetail/${id}`);
+        const res = await getOrderDetailByUserId(
+          `https://fiyo.click/api/orderDetail/${id}`
+        );
         setOrderDetail(res);
         console.log("objectsss", res);
       } catch (error) {
@@ -55,7 +61,10 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
   // Consistent number formatting using toLocaleString
   const formatPrice = (price: number | undefined) => {
     if (price == null) return "0 ₫";
-    return price.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+    return price.toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    });
   };
 
   const handleSubmitReview = async ({
@@ -73,7 +82,6 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
     order_detail_id: string;
     user_id: string;
   }) => {
-
     try {
       const formData = new FormData();
       formData.append("product_id", productId);
@@ -111,34 +119,33 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
       user_id: orderDetail?.user?._id,
       order_detail_id: item._id,
     })) || [];
-      // Hàm dịch trạng thái sang tiếng Việt
-const translateStatus = (status?: string) => {
-  switch (status) {
-    case "unpending":
-      return "Chưa xử lý";
-    case "pending":
-      return "Đang chờ xử lý";
-    case "confirmed":
-      return "Đã xác nhận";
-    case "preparing":
-      return "Đang chuẩn bị";
-    case "awaiting_shipment":
-      return "Chờ vận chuyển";
-    case "shipping":
-      return "Đang giao hàng";
-    case "delivered":
-      return "Đã giao hàng";
-    case "failed":
-      return "Giao hàng thất bại";
-    case "cancelled":
-      return "Đã hủy";
-    case "refund":
-      return "Hoàn tiền";
-    default:
-      return "Không xác định";
-  }
-};
-
+  // Hàm dịch trạng thái sang tiếng Việt
+  const translateStatus = (status?: string) => {
+    switch (status) {
+      case "unpending":
+        return "Chưa xử lý";
+      case "pending":
+        return "Đang chờ xử lý";
+      case "confirmed":
+        return "Đã xác nhận";
+      case "preparing":
+        return "Đang chuẩn bị";
+      case "awaiting_shipment":
+        return "Chờ vận chuyển";
+      case "shipping":
+        return "Đang giao hàng";
+      case "delivered":
+        return "Đã giao hàng";
+      case "failed":
+        return "Giao hàng thất bại";
+      case "cancelled":
+        return "Đã hủy";
+      case "refund":
+        return "Hoàn tiền";
+      default:
+        return "Không xác định";
+    }
+  };
 
   return (
     <>
@@ -152,12 +159,11 @@ const translateStatus = (status?: string) => {
                   <div className="order-detail">
                     <div className="order-detail__content">
                       <div className="order-detail__header">
-                   
-<div className="order-detail__back">
-  <Link href="/page/order">
-    <span>Back</span>
-  </Link>
-</div>
+                        <div className="order-detail__back">
+                          <Link href="/page/order">
+                            <span>Back</span>
+                          </Link>
+                        </div>
 
                         <div className="order-detail__title order-detail__title--mb">
                           Chi tiết đơn hàng
@@ -167,23 +173,28 @@ const translateStatus = (status?: string) => {
                         <h2 className="order-detail__title">
                           Mã đơn hàng: <span>{orderDetail?.order_id}</span>
                         </h2>
-                    <span className="order-detail__status order-detail__status--processing">
-  {translateStatus(
-    orderDetail?.order?.status_history
-      ?.slice()
-      .sort((a: any, b: any) => {
-        const dateA = new Date(a.updatedAt);
-        const dateB = new Date(b.updatedAt);
-        return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
-          ? 0
-          : dateB.getTime() - dateA.getTime();
-      })[0]?.status || orderDetail?.order?.status_order || ""
-  )}
-</span>
+                        <span className="order-detail__status order-detail__status--processing">
+                          {translateStatus(
+                            orderDetail?.order?.status_history
+                              ?.slice()
+                              .sort((a: any, b: any) => {
+                                const dateA = new Date(a.updatedAt);
+                                const dateB = new Date(b.updatedAt);
+                                return isNaN(dateB.getTime()) ||
+                                  isNaN(dateA.getTime())
+                                  ? 0
+                                  : dateB.getTime() - dateA.getTime();
+                              })[0]?.status ||
+                              orderDetail?.order?.status_order ||
+                              ""
+                          )}
+                        </span>
 
                         <div className="order-detail__date">
                           Ngày mua hàng:
-                          <span className="date">{formatDate(orderDetail?.order?.createdAt)}</span>
+                          <span className="date">
+                            {formatDate(orderDetail?.order?.createdAt)}
+                          </span>
                         </div>
                       </div>
                       <div className="order-detail__column">
@@ -191,9 +202,15 @@ const translateStatus = (status?: string) => {
                           <ul className="order-detail__information">
                             <li>
                               <label>Địa chỉ nhận hàng</label>
-                              <div className="value">{orderDetail?.user.name}</div>
-                              <div className="value">{orderDetail?.user.phone}</div>
-                              <div className="value">{orderDetail?.user.address.address}</div>
+                              <div className="value">
+                                {orderDetail?.user.name}
+                              </div>
+                              <div className="value">
+                                {orderDetail?.user.phone}
+                              </div>
+                              <div className="value">
+                                {orderDetail?.user.address.address}
+                              </div>
                             </li>
                             <li className="payment">
                               <label>Phương thức vận chuyển</label>
@@ -204,7 +221,10 @@ const translateStatus = (status?: string) => {
                             <li className="payment">
                               <label>Phương thức thanh toán</label>
                               <div className="value">
-                                <span>Thanh toán ({orderDetail?.order.payment_method})</span>
+                                <span>
+                                  Thanh toán (
+                                  {orderDetail?.order.payment_method})
+                                </span>
                               </div>
                             </li>
                           </ul>
@@ -215,69 +235,94 @@ const translateStatus = (status?: string) => {
                               <div className="order__tracking-back">
                                 <span className="screen-reader-text">back</span>
                               </div>
-                              <div className="order__tracking-title">Theo dõi đơn hàng</div>
+                              <div className="order__tracking-title">
+                                Theo dõi đơn hàng
+                              </div>
                             </div>
-                          <div className="order__tracking-content">
-  <div className="order__tracking-items">
-    {orderDetail?.order?.status_history?.length > 0 ? (
-      <>
-        {[...orderDetail.order.status_history]
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.updatedAt);
-            const dateB = new Date(b.updatedAt);
-            return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
-              ? 0
-              : dateB.getTime() - dateA.getTime();
-          })
-          .map((item: any, index: number) => (
-            <div
-              className={`order__tracking-item ${index === 0 ? "active" : ""}`}
-              key={item._id}
-            >
-              <div className="order__tracking-date">
-                <div className="date" />
-                <span className="time">{formatDate(item.updatedAt)}</span>
-              </div>
-              <div className="order__tracking-icon" />
-              <div className="order__tracking-detail">
-                <strong className="order__tracking-status">
-                  {translateStatus(item.status || "")}
-                </strong>
-                <div>{item.note}</div>
-              </div>
-            </div>
-          ))}
-      </>
-    ) : (
-      <div className="order__tracking-item active">
-        <div className="order__tracking-date">
-          <div className="date" />
-          <span className="time">{formatDate(orderDetail?.order?.createdAt)}</span>
-        </div>
-        <div className="order__tracking-icon" />
-        <div className="order__tracking-detail">
-          <strong className="order__tracking-status">
-            {translateStatus(orderDetail?.order?.status_order || "")}
-          </strong>
-          <div>Chờ xác nhận đơn hàng</div>
-        </div>
-      </div>
-    )}
-    <div className="order__tracking-item">
-      <div className="order__tracking-date">
-        <div className="date" />
-        <span className="time">{formatDate(orderDetail?.order?.createdAt)}</span>
-      </div>
-      <div className="order__tracking-icon" />
-      <div className="order__tracking-detail">
-        <strong className="order__tracking-status">Đặt hàng</strong>
-        <div>Đặt hàng thành công</div>
-      </div>
-    </div>
-  </div>
-</div>
+                            <div className="order__tracking-content">
+                              <div className="order__tracking-items">
+                                {orderDetail?.order?.status_history?.length >
+                                0 ? (
+                                  <>
+                                    {[...orderDetail.order.status_history]
+                                      .sort((a: any, b: any) => {
+                                        const dateA = new Date(a.updatedAt);
+                                        const dateB = new Date(b.updatedAt);
+                                        return isNaN(dateB.getTime()) ||
+                                          isNaN(dateA.getTime())
+                                          ? 0
+                                          : dateB.getTime() - dateA.getTime();
+                                      })
+                                      .map((item: any, index: number) => (
+                                        <div
+                                          className={`order__tracking-item ${
+                                            index === 0 ? "active" : ""
+                                          }`}
+                                          key={item._id}
+                                        >
+                                          <div className="order__tracking-date">
+                                            <div className="date" />
+                                            <span className="time">
+                                              {formatDate(item.updatedAt)}
+                                            </span>
+                                          </div>
+                                          <div className="order__tracking-icon" />
+                                          <div className="order__tracking-detail">
+                                            <strong className="order__tracking-status">
+                                              {translateStatus(
+                                                item.status || ""
+                                              )}
+                                            </strong>
+                                            <div>{item.note}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </>
+                                ) : (
+                                  <div className="order__tracking-item active">
+                                    <div className="order__tracking-date">
+                                      <div className="date" />
+                                      <span className="time">
+                                        {formatDate(
+                                          orderDetail?.order?.createdAt
+                                        )}
+                                      </span>
+                                    </div>
+                                    <div className="order__tracking-icon" />
+                                    <div className="order__tracking-detail">
+                                      <strong className="order__tracking-status">
+                                        {translateStatus(
+                                          orderDetail?.order?.status_order || ""
+                                        )}
+                                      </strong>
+                                      <div>Chờ xác nhận đơn hàng</div>
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="order__tracking-item">
+                                  <div className="order__tracking-date">
+                                    <div className="date" />
+                                    <span className="time">
+                                      {formatDate(
+                                        orderDetail?.order?.createdAt
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="order__tracking-icon" />
+                                  <div className="order__tracking-detail">
+                                    <strong className="order__tracking-status">
+                                      Đặt hàng
+                                    </strong>
+                                    <div>Đặt hàng thành công</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                             <div className="order__tracking-bottom">
-                              <a href="/customer/order-history/tel:18006061" className="btn btn-primary">
+                              <a
+                                href="/customer/order-history/tel:18006061"
+                                className="btn btn-primary"
+                              >
                                 <svg
                                   width={17}
                                   height={17}
@@ -333,15 +378,24 @@ const translateStatus = (status?: string) => {
                           <label>Đang xử lý</label>
                           <p className="des">Đơn hàng đang được xử lý</p>
                           <p className="date">16/07/2025 - 18:05</p>
-                          <button className="btn btn-primary">Theo dõi đơn hàng</button>
+                          <button className="btn btn-primary">
+                            Theo dõi đơn hàng
+                          </button>
                         </div>
                         <div className="icon">
-                          <img src="/status-processing.webp" width={100} height={100} alt="Processing" />
+                          <img
+                            src="/status-processing.webp"
+                            width={100}
+                            height={100}
+                            alt="Processing"
+                          />
                         </div>
                       </div>
                       <div className="order-details-info">
                         <div className="item-row item-row--order">
-                          <div className="label">Mã đơn hàng: CNF1000104131</div>
+                          <div className="label">
+                            Mã đơn hàng: CNF1000104131
+                          </div>
                           <div className="action-copy">
                             <span>Copy</span>
                           </div>
@@ -359,7 +413,9 @@ const translateStatus = (status?: string) => {
                         <div className="order-details-box-content">
                           <div className="title">Phương Nguyễn Duy</div>
                           <div className="phone">0865181657</div>
-                          <div className="address">aapas 14, Xã Hương Mạc, Thị xã Từ Sơn, Bắc Ninh</div>
+                          <div className="address">
+                            aapas 14, Xã Hương Mạc, Thị xã Từ Sơn, Bắc Ninh
+                          </div>
                         </div>
                       </div>
                       <div className="order-details-box order-details-shipping-methods">
@@ -378,29 +434,47 @@ const translateStatus = (status?: string) => {
                         </div>
                         <div className="order-details-box-content">
                           <div className="icon">
-                            <img src="/_nuxt/img/cod.1b96f88.svg" width={54} height={32} alt="COD" />
+                            <img
+                              src="/_nuxt/img/cod.1b96f88.svg"
+                              width={54}
+                              height={32}
+                              alt="COD"
+                            />
                           </div>
                           <div>Thanh toán khi nhận hàng (COD)</div>
                         </div>
                       </div>
                       <div className="order-details__products">
                         <h2 className="order-details__products-title">
-                          Sản phẩm <span>({orderDetail?.products?.length})</span>
+                          Sản phẩm{" "}
+                          <span>({orderDetail?.products?.length})</span>
                         </h2>
                         <div className="order-details__products-items">
                           {orderDetail?.products?.map((item: any) => (
-                            <div className="order-details__product"  key={`${item._id ?? item.name}`}>
+                            <div
+                              className="order-details__product"
+                              key={`${item._id ?? item.name}`}
+                            >
                               <div className="order-details__product-photo">
-                                <a href={'#'}>
-                                  <img src={item.images?.[0]} width={80} height={100} alt={item.name} />
+                                <a href={"#"}>
+                                  <img
+                                    src={item.images?.[0]}
+                                    width={80}
+                                    height={100}
+                                    alt={item.name}
+                                  />
                                 </a>
                               </div>
                               <div className="order-details__product-detail">
                                 <div className="order-details__product-info">
                                   <div className="order-details__product-name">
-                                    <a href="/quan-sooc-jeans-nu-6bs25s006">{item.name}</a>
+                                    <a href="/quan-sooc-jeans-nu-6bs25s006">
+                                      {item.name}
+                                    </a>
                                   </div>
-                                  <div className="order-details__product-sku">6BS25S006-SJ932-28</div>
+                                  <div className="order-details__product-sku">
+                                    6BS25S006-SJ932-28
+                                  </div>
                                   <div className="order-details__product-options">
                                     <div className="order-details__product-option">
                                       <span
@@ -427,7 +501,9 @@ const translateStatus = (status?: string) => {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="order-details__product-qty">x {item.quantity}</div>
+                                <div className="order-details__product-qty">
+                                  x {item.quantity}
+                                </div>
                                 <div className="order-details__product-price">
                                   <span className="order-details__product-price--normal">
                                     {formatPrice(item.price)}
@@ -439,7 +515,9 @@ const translateStatus = (status?: string) => {
                         </div>
                       </div>
                       <div className="order-details-totals">
-                        <div className="order-details-totals-title">Chi tiết đơn hàng</div>
+                        <div className="order-details-totals-title">
+                          Chi tiết đơn hàng
+                        </div>
                         <div className="order-details-totals-content">
                           <table>
                             <tbody>
@@ -448,7 +526,11 @@ const translateStatus = (status?: string) => {
                                   <div className="label">Giá trị đơn hàng</div>
                                 </th>
                                 <td>
-                                  <div className="price">{formatPrice(orderDetail?.order?.total_price)}</div>
+                                  <div className="price">
+                                    {formatPrice(
+                                      orderDetail?.order?.total_price
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                               <tr className="ship">
@@ -463,12 +545,22 @@ const translateStatus = (status?: string) => {
                             <tfoot>
                               <tr className="grand-totals">
                                 <th>
-                                  <div className="label">Tổng tiền thanh toán</div>
-                                  <div className="note">(Đã bao gồm thuế VAT)</div>
+                                  <div className="label">
+                                    Tổng tiền thanh toán
+                                  </div>
+                                  <div className="note">
+                                    (Đã bao gồm thuế VAT)
+                                  </div>
                                 </th>
                                 <td>
-                                  <div className="price">{formatPrice(orderDetail?.order?.total_price)}</div>
-                                  <div className="save">{/* Tiết kiệm 224.700&nbsp;₫ */}</div>
+                                  <div className="price">
+                                    {formatPrice(
+                                      orderDetail?.order?.total_price
+                                    )}
+                                  </div>
+                                  <div className="save">
+                                    {/* Tiết kiệm 224.700&nbsp;₫ */}
+                                  </div>
                                 </td>
                               </tr>
                             </tfoot>
@@ -480,18 +572,24 @@ const translateStatus = (status?: string) => {
                                 .sort((a: any, b: any) => {
                                   const dateA = new Date(a.updatedAt);
                                   const dateB = new Date(b.updatedAt);
-                                  return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
+                                  return isNaN(dateB.getTime()) ||
+                                    isNaN(dateA.getTime())
                                     ? 0
                                     : dateB.getTime() - dateA.getTime();
-                                })[0]?.status || orderDetail?.order?.status_order;
+                                })[0]?.status ||
+                              orderDetail?.order?.status_order;
 
                             return latestStatus === "delivered" ? (
                               <div className="order-details-totals-bottom">
                                 <button
                                   className="btn btn-primary"
-                                  onClick={() => setShowReviewForm((prev) => !prev)}
+                                  onClick={() =>
+                                    setShowReviewForm((prev) => !prev)
+                                  }
                                 >
-                                  {showReviewForm ? "Đóng đánh giá" : "Viết đánh giá"}
+                                  {showReviewForm
+                                    ? "Đóng đánh giá"
+                                    : "Viết đánh giá"}
                                 </button>
                               </div>
                             ) : null;
