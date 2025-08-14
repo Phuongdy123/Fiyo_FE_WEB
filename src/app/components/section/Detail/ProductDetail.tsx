@@ -83,7 +83,7 @@ export default function DetailSection({ product }: { product: IProduct }) {
     addToCart({
       id: product._id,
       name: product.name,
-      price: salePrice, // Sử dụng salePrice đã tính
+      price: salePrice, 
       image: product.images?.[0],
       variant: selectedVariant.color,
       size: selectedSize,
@@ -260,7 +260,7 @@ export default function DetailSection({ product }: { product: IProduct }) {
                         className={`item-title ${isCommentOpen ? "expanded" : ""}`}
                         onClick={() => setIsCommentOpen((prev) => !prev)}
                       >
-                        Bình luận
+                        Đánh giá
                       </div>
                       <div
                         className={`item-content ${isCommentOpen ? "open" : ""}`}

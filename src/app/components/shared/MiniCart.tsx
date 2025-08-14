@@ -1,6 +1,7 @@
 "use client";
 
 import "@/app/assets/css/checkout.css";
+import "@/app/assets/css/header.css"
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/context/Ccart";

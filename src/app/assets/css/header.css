@@ -208,6 +208,7 @@ a{
         position: relative;
     }
     .header__logo {
+        
         margin-right: auto;
         display: flex
     ;
@@ -371,6 +372,7 @@ a{
     right: 0;
     opacity: 1;
 }
+
 .minicart {
     position: fixed;
     top: 0;
@@ -423,17 +425,15 @@ a{
     width: 100%;
     left: 0;
 }
-.minicart__container {
-    position: relative;
-    z-index: 5;
-    width: 580px;
-    position: fixed;
-    top: 0;
-    right: -580px;
-    visibility: hidden;
-    background-color: #fff;
-    transition: .4s;
+.minicart__container{
+  position: relative;   /* hoặc static */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  right: auto;          /* reset mọi rule cũ */
 }
+
 .minicart__body, .minicart__container {
     display: flex
 ;
@@ -1508,3 +1508,122 @@ img {
   background-color: #fff;
   color: #000;
 }
+
+/* Mobile */
+@media (max-width: 767px) {
+    .header {
+        flex-wrap: wrap;
+        padding: 8px 12px;
+    }
+    .header__icon-store{
+    display: none;
+    }
+    .header__group-icon {
+        gap: 0px; /* hoặc dùng margin nhỏ hơn */
+    }
+       .header__logo {
+        
+        width: 110px;
+        
+    }
+    .header__search{
+        width: 320px;
+        margin-left: 17vw;
+        margin-right: 2.5vw;
+    }
+        .header__group-icon span {
+        display: none;
+    }
+
+
+  .header__group-icon {
+        padding: 0;
+        margin: 0 -20px; /* giảm khoảng cách hai bên */
+    }
+
+    .header__search-input{
+        font-size: 11px;
+
+    }
+    .header__search-form{
+        height: 37.5px;
+        width: 37vw;
+      
+    }
+
+    .header-nav {
+        display: none; /* Ẩn menu lớn */
+    }
+
+    .header-icons {
+        gap: 10px;
+    }
+    .header__icon{
+        margin-left: -8vw;
+    }
+
+    .menu-toggle {
+        display: block; /* Hamburger menu */
+    }
+    .minicart__container {
+    width: 100vw;
+    box-sizing: border-box; /* Đảm bảo padding/margin không làm tràn */
+}
+
+.minicart.active {
+    position: fixed; /* Bám theo viewport khi scroll */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh); 
+    z-index: 1000; /* Đảm bảo minicart nằm trên các phần tử khác */
+    overflow-y: auto; /* Cho phép cuộn nội dung bên trong minicart nếu dài */
+    background: #fff; /* Thêm nền để tránh trong suốt */
+    transition: left 0.3s ease; /* Hiệu ứng mượt khi mở/đóng */
+}
+.menu__container {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100vw;
+    -webkit-overflow-scrolling: touch; /* cuộn mượt trên iOS */
+  }
+
+  .menu__container::-webkit-scrollbar {
+    display: none; /* ẩn thanh cuộn */
+  }
+
+  .menu__item {
+    flex-shrink: 0; /* tránh co lại */
+  }
+    
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .header {
+        padding: 10px 20px;
+    }
+
+    .header-nav {
+        gap: 15px;
+        font-size: 14px;
+    }
+    .header__logo{
+        margin-right: 4vw;
+      
+    }
+
+  
+    .header-icons {
+        gap: 15px;
+    }
+    
+}
+/* Desktop */
+@media (min-width: 1024px) {
+    .header {
+        padding: 12px 40px;
+    }
+}
+

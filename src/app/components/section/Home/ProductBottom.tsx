@@ -1,15 +1,25 @@
 'use client';
-import HomeEffectsJs from '@/app/assets/js/home';
 import { useState, useEffect } from "react";
 import { IProduct } from "@/app/untils/IProduct";
 import PageNavComponents from '../../shared/PageNav';
 import ProductList from '../../shared/ListProduct';
 
-export default function ProductFlashSaleSection() {
+export default function ProductBottomSection() {
   const [listProduct, setListProduct] = useState<IProduct[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 8;
+
+  // Chuẩn hoá tiếng Việt: bỏ dấu, lower-case, trim
+  const vn = (s?: string) =>
+    (s ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+      .replace(/đ/g, "d")
+      .trim();
+
+  const queryPrefix = vn("quần"); // đổi thành "áo" để test nhanh với data bạn gửi
 
   const fetchData = async (page: number) => {
     try {
@@ -21,23 +31,25 @@ export default function ProductFlashSaleSection() {
         const res = await fetch(`https://fiyo.click/api/products/pro/?page=${currentPageFetch}&limit=${limit}`);
         const data = await res.json();
 
-        totalPagesFromApi = data.totalPages || 1;
+        // Nếu API trả object { data, totalPages, ... }
+        const items = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        totalPagesFromApi = data?.totalPages ?? totalPagesFromApi;
 
-        // Lọc bỏ sản phẩm bị ẩn
-        const visibleProducts = (data.data || []).filter(
-          (product: any) => product.isHidden === false || product.isHidden === undefined
-        );
+        // Lọc: không ẩn + tên bắt đầu bằng "Quần" (không phân biệt dấu)
+        const filtered = items.filter((p: any) => {
+          const notHidden = p?.isHidden === false || p?.isHidden === undefined;
+          const nameStarts = vn(p?.name).startsWith(queryPrefix);
+          return notHidden && nameStarts;
+        });
 
-        tempList = [...tempList, ...visibleProducts];
+        tempList = [...tempList, ...filtered];
 
-        
-        if (currentPageFetch >= totalPagesFromApi) break;
+        if (currentPageFetch >= (totalPagesFromApi || 1)) break;
         currentPageFetch++;
       }
 
-   
       setListProduct(tempList.slice(0, limit));
-      setTotalPages(totalPagesFromApi);
+      setTotalPages(totalPagesFromApi || 1);
       setCurrentPage(page);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -46,11 +58,10 @@ export default function ProductFlashSaleSection() {
 
   useEffect(() => {
     fetchData(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  const handlePageChange = (page: number) => setCurrentPage(page);
 
   return (
     <div className="products-grid">

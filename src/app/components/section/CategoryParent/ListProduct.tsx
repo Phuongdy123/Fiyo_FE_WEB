@@ -23,7 +23,6 @@ export default function ListProductCate({
   const sorterRef = useRef<HTMLDivElement>(null);
 
   const parentCategoryId = categorybyslug[0]._id;
-  const title = "Sản phẩm";
   const [sortOpen, setSortOpen] = useState(false);
 
   const sortMap = {
@@ -40,7 +39,6 @@ export default function ListProductCate({
 
   const selectedSort = reverseSortMap[filters.sort ?? "newest"] ?? "Mới nhất";
 
-  
   const handleSortChange = (label: keyof typeof sortMap) => {
     const newSortValue = sortMap[label];
     const newFilters = { ...filters, sort: newSortValue };
@@ -48,9 +46,7 @@ export default function ListProductCate({
     setSortOpen(false);
   };
 
-
   useEffect(() => {
-
     const fetchFilteredProducts = async () => {
       try {
         setFadeClass("fade-out");
@@ -102,6 +98,11 @@ export default function ListProductCate({
     };
   }, []);
 
+  // 🔹 Lọc sản phẩm không bị ẩn
+  const visibleProducts = products.filter(
+    (p) => p.isHidden === false || p.isHidden === undefined
+  );
+
   return (
     <div className="columns__main">
       <div className="toolbar toolbar-products">
@@ -109,7 +110,7 @@ export default function ListProductCate({
           <span>
             {loading
               ? "Đang tải sản phẩm..."
-              : `Tổng số ${products.length} sản phẩm`}
+              : `Tổng số ${visibleProducts.length} sản phẩm`}
           </span>
         </div>
 
@@ -145,7 +146,7 @@ export default function ListProductCate({
           {loading ? (
             <p>Đang tải sản phẩm...</p>
           ) : (
-            <ProductList  products ={products} />
+            <ProductList products={visibleProducts} />
           )}
         </div>
       </div>
@@ -154,8 +155,8 @@ export default function ListProductCate({
         <div className="toolbar-loadmore">
           <button className="toolbar-loadmore__button">Xem thêm</button>
           <div className="toolbar-loadmore__text">
-            Hiển thị <span>{products.length}</span> trên tổng số {" "}
-            <span>{products.length}</span> sản phẩm
+            Hiển thị <span>{visibleProducts.length}</span> trên tổng số {" "}
+            <span>{visibleProducts.length}</span> sản phẩm
           </div>
         </div>
       )}

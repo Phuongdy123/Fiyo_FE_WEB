@@ -1,34 +1,73 @@
   import { ICategory } from "../untils/ICategory";
   import { IProduct } from "../untils/IProduct";
+ 
 
-    export const getAllProduct = async (url: string): Promise<IProduct[]> => {
-      const res = await fetch(url);
-      const data = await res.json();
+   export const getAllProduct = async (url: string): Promise<IProduct[]> => {
+  const res = await fetch(url);
+  const data = await res.json();
 
-      const products: IProduct[] = data.map((product: any) => {
-        const category = product.category_id || { _id: "", name: "" };
+  const products: IProduct[] = data
+    .filter((product: any) => product.isHidden === false || product.isHidden === undefined) // chỉ lấy sản phẩm không ẩn
+    .map((product: any) => {
+      const category = product.category_id || { _id: "", name: "" };
 
-        return {
-          _id: product._id,
-          name: product.name,
-          images: product.images,
-          price: product.price,
-          sale: product.sale,
-          material: product.material,
-          shop_id: product.shop_id,
-          description: product.description,
-          sale_count: product.sale_count,
-          category_id: {
-            _id: category._id,
-            name: category.name,
-          },
-          isHidden: product.isHidden,
-          create_at: product.create_at,
-        };
-      });
+      return {
+        _id: product._id,
+        name: product.name,
+        images: product.images,
+        price: product.price,
+        sale: product.sale,
+        material: product.material,
+        shop_id: product.shop_id,
+        description: product.description,
+        sale_count: product.sale_count,
+        category_id: {
+          _id: category._id,
+          name: category.name,
+        },
+        isHidden: product.isHidden,
+        create_at: product.create_at,
+      };
+    });
 
-      return products;
-    };
+  return products;
+};
+export const getAllProductSaleCount = async (url: string): Promise<IProduct[]> => {
+  const res = await fetch(url);
+  const data = await res.json();
+
+  const products: IProduct[] = data
+    // Lọc sản phẩm không ẩn
+    .filter((product: any) => product.isHidden === false || product.isHidden === undefined)
+    // Map sang IProduct
+    .map((product: any) => {
+      const category = product.category_id || { _id: "", name: "" };
+
+      return {
+        _id: product._id,
+        name: product.name,
+        images: product.images,
+        price: product.price,
+        sale: product.sale,
+        material: product.material,
+        shop_id: product.shop_id,
+        description: product.description,
+        sale_count: product.sale_count,
+        category_id: {
+          _id: category._id,
+          name: category.name,
+        },
+        isHidden: product.isHidden,
+        create_at: product.create_at,
+      } as IProduct;
+    })
+    // Sắp xếp theo sale_count giảm dần
+    .sort((a: IProduct, b: IProduct) => (b.sale_count || 0) - (a.sale_count || 0));
+
+  return products;
+};
+
+
   export const getAllSaleProduct = async (url: string): Promise<IProduct[]> => {
     const res = await fetch(url);
     const data = await res.json();

@@ -5,13 +5,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/CAuth";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useToast } from "@/app/context/CToast";
-// Global declaration cho Facebook SDK
-declare global {
-  interface Window {
-    fbAsyncInit: () => void;
-    FB: any;
-  }
-}
 
 export default function LoginFormSection() {
   const { loginUser } = useAuth();
@@ -19,64 +12,64 @@ export default function LoginFormSection() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-    const { showToast } = useToast();
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const { showToast } = useToast();
 
-  // Validate
-  const emailError = validateEmail(email);
-  const passwordError = validatePassword(password);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (emailError || passwordError) {
-    const msg = emailError || passwordError || "Vui lòng kiểm tra lại thông tin.";
-    setError(msg);              // ✅ msg luôn là string
-    showToast(msg, "error");
-    return;
-  }
+    // Validate
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
 
-  try {
-    const res = await fetch("https://fiyo.click/api/user/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    if (emailError || passwordError) {
+      const msg = emailError || passwordError || "Vui lòng kiểm tra lại thông tin.";
+      setError(msg);
+      showToast(msg, "error");
+      return;
+    }
 
-    const data = await res.json();
+    try {
+      const res = await fetch("https://fiyo.click/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (data.status) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      loginUser(data.user);
+      const data = await res.json();
 
-      const msg = "Đăng nhập thành công!";
-      setSuccess(msg);
-      showToast(msg, "success");
-      setError("");
-       setTimeout(() => {
-    window.location.href = "/";
-  }, 1200);
-    } else {
-      const msg = data.message || "Lỗi đăng nhập";
+      if (data.status) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        loginUser(data.user);
+
+        const msg = "Đăng nhập thành công!";
+        setSuccess(msg);
+        showToast(msg, "success");
+        setError("");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1200);
+      } else {
+        const msg = data.message || "Lỗi đăng nhập";
+        setError(msg);
+        showToast(msg, "error");
+        setSuccess("");
+      }
+    } catch (err) {
+      const msg = "Đăng nhập thất bại. Vui lòng thử lại.";
       setError(msg);
       showToast(msg, "error");
       setSuccess("");
     }
-  } catch (err) {
-    const msg = "Đăng nhập thất bại. Vui lòng thử lại.";
-    setError(msg);
-    showToast(msg, "error");
-    setSuccess("");
-  }
-};
+  };
 
-  
   const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
       setError("Không nhận được mã xác thực từ Google");
       return;
     }
 
-    try { 
+    try {
       const res = await fetch("https://fiyo.click/api/user/login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,9 +83,9 @@ const handleSubmit = async (e: React.FormEvent) => {
         setSuccess("Đăng nhập bằng Google thành công!");
         showToast("Đăng nhập thành công!", "success");
         setError("");
-         setTimeout(() => {
-    window.location.href = "/";
-  }, 2000);
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
       } else {
         setError(data.message || "Lỗi đăng nhập Google");
         showToast(data.message || "Lỗi đăng nhập", "error");
@@ -100,106 +93,40 @@ const handleSubmit = async (e: React.FormEvent) => {
       }
     } catch (err) {
       setError("Lỗi đăng nhập Google");
-showToast("Đăng nhập thất bại. Vui lòng thử lại.", "error");
+      showToast("Đăng nhập thất bại. Vui lòng thử lại.", "error");
       setSuccess("");
     }
   };
 
-  const handleFacebookLogin = () => {
-    window.FB.login(
-      async (response: any) => {
-        if (response.authResponse) {
-          try {
-            const res = await fetch("https://fiyo.click/api/user/login-facebook", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                accessToken: response.authResponse.accessToken,
-              }),
-            });
-            const data = await res.json();
-            if (data.status) {
-              localStorage.setItem("token", data.token);
-              localStorage.setItem("user", JSON.stringify(data.user));
-              loginUser(data.user);
-              setSuccess("Đăng nhập bằng Facebook thành công!");
-              showToast("Đăng nhập thành công!", "success");
-              setError("");
-               setTimeout(() => {
-    window.location.href = "/";
-  }, 2000);
-            } else {
-              setError(data.message || "Lỗi đăng nhập Facebook");
-           showToast("Đăng nhập thất bại. Vui lòng thử lại.", "error");;
-              setSuccess("");
-            }
-          } catch (err) {
-            setError("Lỗi hệ thống khi đăng nhập Facebook");
-          }
-        } else {
-          setError("Người dùng đã hủy đăng nhập Facebook");
-        }
-      },
-      { scope: "email" }
-    );
+  const validateEmail = (email: string): string | null => {
+    if (!email.trim()) return "Email không được để trống.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Email không hợp lệ.";
+    return null;
   };
 
-  useEffect(() => {
-    // Khởi tạo SDK Facebook
-    window.fbAsyncInit = function () {
-      window.FB.init({
-        appId: "YOUR_FACEBOOK_APP_ID", // Thay bằng App ID thật
-        cookie: true,
-        xfbml: true,
-        version: "v19.0",
-      });
-    };
+  const validatePassword = (password: string): string | null => {
+    if (!password.trim()) return "Mật khẩu không được để trống.";
+    return null;
+  };
 
-    // Tải Facebook SDK
-    (function (d, s, id) {
-      const fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
+  const handleEmailBlur = () => {
+    const errorMsg = validateEmail(email);
+    if (errorMsg) {
+      setError(errorMsg);
+    } else {
+      setError("");
+    }
+  };
 
-      const js = d.createElement(s) as HTMLScriptElement;
-      js.id = id;
-      js.src = "https://connect.facebook.net/vi_VN/sdk.js";
-      if (fjs && fjs.parentNode) fjs.parentNode.insertBefore(js, fjs);
-    })(document, "script", "facebook-jssdk");
-  }, []);
-
-  // validate UX
-  
-  const validateEmail = (email: string): string | null => {
-  if (!email.trim()) return "Email không được để trống.";
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) return "Email không hợp lệ.";
-  return null;
-};
-
-const validatePassword = (password: string): string | null => {
-  if (!password.trim()) return "Mật khẩu không được để trống.";
-  return null;
-};
-const handleEmailBlur = () => {
-  const errorMsg = validateEmail(email);
-  if (errorMsg) {
-    setError(errorMsg);
-   
-  } else {
-    setError("");
-  }
-};
-
-const handlePasswordBlur = () => {
-  const errorMsg = validatePassword(password);
-  if (errorMsg) {
-    setError(errorMsg);
-   
-  } else {
-    setError("");
-  }
-};
-
+  const handlePasswordBlur = () => {
+    const errorMsg = validatePassword(password);
+    if (errorMsg) {
+      setError(errorMsg);
+    } else {
+      setError("");
+    }
+  };
 
   return (
     <div className="container-default">
@@ -247,56 +174,68 @@ const handlePasswordBlur = () => {
                 onSuccess={handleGoogleLogin}
                 onError={() => setError("Lỗi xác thực Google")}
               />
-
-              <button
-                type="button"
-                onClick={handleFacebookLogin}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  backgroundColor: "#3b5998",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  marginTop: "10px",
-                  cursor: "pointer",
-                }}
-              >
-                Đăng nhập bằng Facebook
-              </button>
             </div>
 
-              <div style={{ marginTop: "10px" }}>
-                  <a href="quenmatkhau.html" className="back-link">
-                    <strong style={{ fontSize: 14 }}>Quên mật khẩu?</strong>
-                  </a>
-                  <strong
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 100,
-                      color: "#939090",
-                      margin: "0 5px",
-                    }}
-                  >
-                    hoặc
-                  </strong>
-                  <a
-                    href="/page/register"
-                    style={{
-                      textDecoration: "none",
-                      fontSize: 12,
-                      fontWeight: 200,
-                      color: "black",
-                    }}
-                  >
-                    đăng ký
-                  </a>
-                  <br />
-                  <a href="/" className="back-link">
-                    <strong style={{ fontSize: 14 }}>←</strong> Quay lại trang
-                    chủ
-                  </a>
-                </div>
+       <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: "8px", // khoảng cách giữa các phần tử
+    marginTop: "10px",
+    flexWrap: "wrap", // nếu màn hình nhỏ thì xuống hàng
+  }}
+>
+  <a
+    href="quenmatkhau.html"
+    className="back-link"
+    style={{ textDecoration: "none", color: "inherit" }}
+  >
+    <strong style={{ fontSize: 14 }}>Quên mật khẩu?</strong>
+  </a>
+
+  <strong
+    style={{
+      fontSize: 16,
+      fontWeight: 100,
+      color: "#939090",
+    }}
+  >
+    hoặc
+  </strong>
+
+  <a
+    href="/page/register"
+    style={{
+      textDecoration: "none",
+      fontSize: 16,
+      fontWeight: 600,
+      color: "black",
+    }}
+  >
+    đăng ký
+  </a>
+
+  {/* Link quay lại trang chủ */}
+  <a
+    href="/"
+    className="back-link"
+    style={{
+      marginLeft: "auto", // đẩy sang bên phải nếu muốn
+      textDecoration: "none",
+      display: "flex",
+      alignItems: "center",
+      gap: "4px",
+      fontSize: 16,
+      color: "inherit",
+    }}
+  >
+    
+  </a>
+  
+</div>
+
+
           </form>
         </div>
       </aside>

@@ -6,12 +6,7 @@ export default function BreadcumComponent(){
         <li className="item">
         <a href="#">Trang chủ</a>
         </li>
-        <li className="item">
-        <a href="#">Nam</a>
-        </li>
-        <li className="item">
-        <a href="#">Áo khoác Nam</a>
-        </li>
+       
         <li className="item">
         <strong>
         <a href="#">Áo khoác chống nắng nam</a>

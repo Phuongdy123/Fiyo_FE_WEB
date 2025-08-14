@@ -2,7 +2,7 @@
 import HomeEffectsJs from "@/app/assets/js/home";
 import { useState, useEffect } from "react";
 import { IProduct } from "@/app/untils/IProduct";
-import { getAllProduct } from "@/app/services/SProduct";
+import { getAllProductSaleCount } from "@/app/services/SProduct";
 
 export default function HotProductSection() {
   const [listProduct, setListProduct] = useState<IProduct[]>([]);
@@ -10,7 +10,7 @@ export default function HotProductSection() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let products: IProduct[] = await getAllProduct("https://fiyo.click/api/products");
+        let products: IProduct[] = await getAllProductSaleCount("https://fiyo.click/api/products");
 
         // Lọc sản phẩm có ảnh
         const filtered = products.filter((p) => p.images && p.images.length > 0);
@@ -26,8 +26,8 @@ export default function HotProductSection() {
 
   return (
     <>
-      <div className="title">
-        <h2>SẢN PHẨM BÁN CHẠY</h2>
+      <div className="title-home">
+        <h2>BÁN CHẠY</h2>
       </div>
       <div className="producthot">
         <div className="banner-producthot">
