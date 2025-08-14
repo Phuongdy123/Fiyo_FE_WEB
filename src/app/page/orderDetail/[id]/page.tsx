@@ -9,6 +9,7 @@ import AccountSiteBar from "@/app/components/shared/AccountSiteBar";
 import { getOrderDetailByUserId } from "@/app/services/Order/SOrder";
 import SectionReviewForm from "@/app/components/section/Reviews/ReviewForm";
 import { getColorStyle } from "@/app/components/shared/ColorBox";
+import Link from "next/link";
 
 export default function AccountPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap params using React.use
@@ -151,9 +152,13 @@ const translateStatus = (status?: string) => {
                   <div className="order-detail">
                     <div className="order-detail__content">
                       <div className="order-detail__header">
-                        <div className="order-detail__back">
-                          <span>Back</span>
-                        </div>
+                   
+<div className="order-detail__back">
+  <Link href="/page/order">
+    <span>Back</span>
+  </Link>
+</div>
+
                         <div className="order-detail__title order-detail__title--mb">
                           Chi tiết đơn hàng
                         </div>

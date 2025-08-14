@@ -15,12 +15,10 @@ export default function MiniCartComponent() {
   const { isOpen, close } = useMinicart();
   const { cart, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [voucher, setVoucher] = useState<IVoucher | null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [voucherList, setVoucherList] = useState<IVoucher[]>([]);
 
-  // Format date function from VoucherPage
   const formatDate = (dateInput: Date | string | null | undefined) => {
     if (!dateInput) return "";
     const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -30,7 +28,6 @@ export default function MiniCartComponent() {
     return `${day}/${month}/${year}`;
   };
 
-  // Updated voucher fetching logic
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
@@ -91,13 +88,16 @@ export default function MiniCartComponent() {
       ? (totalPrice * voucher.value) / 100
       : voucher?.value || 0;
 
-  const finalTotal = totalPrice - discount;
+  // Giới hạn discount tối đa = totalPrice
+  const discountApplied = Math.min(discount, totalPrice);
+
+  // Giới hạn finalTotal tối thiểu 0
+  const finalTotal = Math.max(0, totalPrice - discountApplied);
+
   const outOfStockProduct = cart.some(item => item.quantity_Product < 1);
 
   const handleCheckout = () => {
-    if (outOfStockProduct) {
-      return;
-    }
+    if (outOfStockProduct) return;
     localStorage.setItem("finalTotal", finalTotal.toString());
     window.location.href = user ? "/page/checkout" : "/page/checkoutNoLogin";
   };
@@ -191,18 +191,9 @@ export default function MiniCartComponent() {
                             className="btn-qty btn-qty-min"
                             onClick={() => {
                               if (item.quantity <= 1) {
-                                removeFromCart(
-                                  item.id,
-                                  item.variant_id,
-                                  item.size
-                                );
+                                removeFromCart(item.id, item.variant_id, item.size);
                               } else {
-                                updateQuantity(
-                                  item.id,
-                                  item.variant_id,
-                                  item.size,
-                                  item.quantity - 1
-                                );
+                                updateQuantity(item.id, item.variant_id, item.size, item.quantity - 1);
                               }
                             }}
                           ></button>
@@ -214,18 +205,18 @@ export default function MiniCartComponent() {
                           />
                           <button
                             className="btn-qty btn-qty-plus"
-                            onClick={() =>
-                              updateQuantity(
-                                item.id,
-                                item.variant_id,
-                                item.size,
-                                item.quantity + 1
-                              )
-                            }
+                            onClick={() => {
+                              if (item.quantity < item.quantity_Product) {
+                                updateQuantity(item.id, item.variant_id, item.size, item.quantity + 1);
+                              }
+                            }}
                           ></button>
                         </div>
                         {item.quantity < 1 && (
                           <div className="text-red-500 text-xs mt-1">Sản phẩm đã hết hàng</div>
+                        )}
+                        {item.quantity >= item.quantity_Product && (
+                          <div className="text-red-500 text-xs mt-1">Đã đạt số lượng tối đa trong kho</div>
                         )}
                       </div>
                     </div>
@@ -243,6 +234,8 @@ export default function MiniCartComponent() {
               </div>
             )}
           </div>
+
+          {/* Coupon & Summary */}
           <div className="minicart__bottom">
             <div className="minicart__coupon">
               <div className="minicart__coupon-title">Mã ưu đãi</div>
@@ -277,7 +270,7 @@ export default function MiniCartComponent() {
                   {voucher && (
                     <tr className="subtotal">
                       <th>Giảm giá</th>
-                      <td>-{formatPrice(discount)}</td>
+                      <td>-{formatPrice(discountApplied)}</td>
                     </tr>
                   )}
                   <tr className="subtotal">
@@ -299,6 +292,8 @@ export default function MiniCartComponent() {
           </div>
         </div>
       </div>
+
+      {/* Voucher Modal */}
       {showVoucherModal && (
         <div className="modal-coupon__container">
           <div className="modal-coupon__content">
@@ -340,8 +335,7 @@ export default function MiniCartComponent() {
                       <div className="modal-coupon__item-label">Mã ưu đãi</div>
                       <div className="modal-coupon__item-detail">
                         <div className="modal-coupon__item-title">
-                          Voucher {item.value}
-                          {item.type}
+                          Voucher {item.value}{item.type}
                         </div>
                         <div className="modal-coupon__item-des">
                           Áp dụng từ {item.min_total?.toLocaleString()}đ đến {item.max_total?.toLocaleString()}đ

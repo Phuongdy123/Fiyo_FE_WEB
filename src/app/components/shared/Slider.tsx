@@ -6,13 +6,13 @@ export default function SliderComponent(){
   {
     src: 'https://2885371169.e.cdneverest.net/pub/media/Simiconnector/BannerSlider/a/c/acn_topbanner_desktop-070525.webp',
     alt: 'Slide 1',
-    link: '/collections/sale',
+    link: '/page/product',
     showButton: true,
   },
   {
     src: 'https://2885371169.e.cdneverest.net/pub/media/Simiconnector/BannerSlider/v/i/viettin_topbanner_desktop-110625a.webp',
     alt: 'Slide 2',
-    link: '',
+    link: '/page/sale',
     showButton: true,
   },
 ];
