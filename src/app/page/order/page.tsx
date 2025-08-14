@@ -51,6 +51,34 @@ export default function AccountPage() {
 
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
+  // Hàm dịch trạng thái sang tiếng Việt
+const translateStatus = (status?: string) => {
+  switch (status) {
+    case "unpending":
+      return "Chưa xử lý";
+    case "pending":
+      return "Đang chờ xử lý";
+    case "confirmed":
+      return "Đã xác nhận";
+    case "preparing":
+      return "Đang chuẩn bị";
+    case "awaiting_shipment":
+      return "Chờ vận chuyển";
+    case "shipping":
+      return "Đang giao hàng";
+    case "delivered":
+      return "Đã giao hàng";
+    case "failed":
+      return "Giao hàng thất bại";
+    case "cancelled":
+      return "Đã hủy";
+    case "refund":
+      return "Hoàn tiền";
+    default:
+      return "Không xác định";
+  }
+};
+
 
   return (
     <>
@@ -88,9 +116,9 @@ export default function AccountPage() {
                               <div className="order-title">Mã đơn hàng</div>
                               <p>{order._id}</p>
                             </div>
-                            <div className="order-status">
-                              {order.status_order}
-                            </div>
+                          <div className="order-status">
+  {translateStatus(order.status_order)}
+</div>
                             <div className="order-detail">
                               <div className="order-title">Thời gian:</div>
                               <p>{formatDate(order.createdAt)}</p>
