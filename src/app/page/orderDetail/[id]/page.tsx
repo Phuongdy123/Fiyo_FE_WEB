@@ -110,6 +110,34 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
       user_id: orderDetail?.user?._id,
       order_detail_id: item._id,
     })) || [];
+      // Hàm dịch trạng thái sang tiếng Việt
+const translateStatus = (status?: string) => {
+  switch (status) {
+    case "unpending":
+      return "Chưa xử lý";
+    case "pending":
+      return "Đang chờ xử lý";
+    case "confirmed":
+      return "Đã xác nhận";
+    case "preparing":
+      return "Đang chuẩn bị";
+    case "awaiting_shipment":
+      return "Chờ vận chuyển";
+    case "shipping":
+      return "Đang giao hàng";
+    case "delivered":
+      return "Đã giao hàng";
+    case "failed":
+      return "Giao hàng thất bại";
+    case "cancelled":
+      return "Đã hủy";
+    case "refund":
+      return "Hoàn tiền";
+    default:
+      return "Không xác định";
+  }
+};
+
 
   return (
     <>
@@ -134,17 +162,20 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
                         <h2 className="order-detail__title">
                           Mã đơn hàng: <span>{orderDetail?.order_id}</span>
                         </h2>
-                        <span className="order-detail__status order-detail__status--processing">
-                          {orderDetail?.order?.status_history
-                            ?.slice()
-                            .sort((a: any, b: any) => {
-                              const dateA = new Date(a.updatedAt);
-                              const dateB = new Date(b.updatedAt);
-                              return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
-                                ? 0
-                                : dateB.getTime() - dateA.getTime();
-                            })[0]?.status || orderDetail?.order?.status_order}
-                        </span>
+                    <span className="order-detail__status order-detail__status--processing">
+  {translateStatus(
+    orderDetail?.order?.status_history
+      ?.slice()
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.updatedAt);
+        const dateB = new Date(b.updatedAt);
+        return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
+          ? 0
+          : dateB.getTime() - dateA.getTime();
+      })[0]?.status || orderDetail?.order?.status_order || ""
+  )}
+</span>
+
                         <div className="order-detail__date">
                           Ngày mua hàng:
                           <span className="date">{formatDate(orderDetail?.order?.createdAt)}</span>
@@ -156,7 +187,7 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
                             <li>
                               <label>Địa chỉ nhận hàng</label>
                               <div className="value">{orderDetail?.user.name}</div>
-                              <div className="value">0865181657</div>
+                              <div className="value">{orderDetail?.user.phone}</div>
                               <div className="value">{orderDetail?.user.address.address}</div>
                             </li>
                             <li className="payment">
@@ -181,63 +212,65 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
                               </div>
                               <div className="order__tracking-title">Theo dõi đơn hàng</div>
                             </div>
-                            <div className="order__tracking-content">
-                              <div className="order__tracking-items">
-                                {orderDetail?.order?.status_history?.length > 0 ? (
-                                  <>
-                                    {[...orderDetail.order.status_history]
-                                      .sort((a: any, b: any) => {
-                                        const dateA = new Date(a.updatedAt);
-                                        const dateB = new Date(b.updatedAt);
-                                        return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
-                                          ? 0
-                                          : dateB.getTime() - dateA.getTime();
-                                      })
-                                      .map((item: any, index: number) => (
-                                        <div
-                                          className={`order__tracking-item ${index === 0 ? "active" : ""}`}
-                                          key={item._id } 
-                                        >
-                                          <div className="order__tracking-date">
-                                            <div className="date" />
-                                            <span className="time">{formatDate(item.updatedAt)}</span>
-                                          </div>
-                                          <div className="order__tracking-icon" />
-                                          <div className="order__tracking-detail">
-                                            <strong className="order__tracking-status">{item.status}</strong>
-                                            <div>{item.note}</div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                  </>
-                                ) : (
-                                  <div className="order__tracking-item active">
-                                    <div className="order__tracking-date">
-                                      <div className="date" />
-                                      <span className="time">{formatDate(orderDetail?.order?.createdAt)}</span>
-                                    </div>
-                                    <div className="order__tracking-icon" />
-                                    <div className="order__tracking-detail">
-                                      <strong className="order__tracking-status">
-                                        {orderDetail?.order?.status_order || "Chờ xác nhận"}
-                                      </strong>
-                                      <div>Chờ xác nhận đơn hàng</div>
-                                    </div>
-                                  </div>
-                                )}
-                                <div className="order__tracking-item">
-                                  <div className="order__tracking-date">
-                                    <div className="date" />
-                                    <span className="time">{formatDate(orderDetail?.order?.createdAt)}</span>
-                                  </div>
-                                  <div className="order__tracking-icon" />
-                                  <div className="order__tracking-detail">
-                                    <strong className="order__tracking-status">Đặt hàng</strong>
-                                    <div>Đặt hàng thành công</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                          <div className="order__tracking-content">
+  <div className="order__tracking-items">
+    {orderDetail?.order?.status_history?.length > 0 ? (
+      <>
+        {[...orderDetail.order.status_history]
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.updatedAt);
+            const dateB = new Date(b.updatedAt);
+            return isNaN(dateB.getTime()) || isNaN(dateA.getTime())
+              ? 0
+              : dateB.getTime() - dateA.getTime();
+          })
+          .map((item: any, index: number) => (
+            <div
+              className={`order__tracking-item ${index === 0 ? "active" : ""}`}
+              key={item._id}
+            >
+              <div className="order__tracking-date">
+                <div className="date" />
+                <span className="time">{formatDate(item.updatedAt)}</span>
+              </div>
+              <div className="order__tracking-icon" />
+              <div className="order__tracking-detail">
+                <strong className="order__tracking-status">
+                  {translateStatus(item.status || "")}
+                </strong>
+                <div>{item.note}</div>
+              </div>
+            </div>
+          ))}
+      </>
+    ) : (
+      <div className="order__tracking-item active">
+        <div className="order__tracking-date">
+          <div className="date" />
+          <span className="time">{formatDate(orderDetail?.order?.createdAt)}</span>
+        </div>
+        <div className="order__tracking-icon" />
+        <div className="order__tracking-detail">
+          <strong className="order__tracking-status">
+            {translateStatus(orderDetail?.order?.status_order || "")}
+          </strong>
+          <div>Chờ xác nhận đơn hàng</div>
+        </div>
+      </div>
+    )}
+    <div className="order__tracking-item">
+      <div className="order__tracking-date">
+        <div className="date" />
+        <span className="time">{formatDate(orderDetail?.order?.createdAt)}</span>
+      </div>
+      <div className="order__tracking-icon" />
+      <div className="order__tracking-detail">
+        <strong className="order__tracking-status">Đặt hàng</strong>
+        <div>Đặt hàng thành công</div>
+      </div>
+    </div>
+  </div>
+</div>
                             <div className="order__tracking-bottom">
                               <a href="/customer/order-history/tel:18006061" className="btn btn-primary">
                                 <svg
