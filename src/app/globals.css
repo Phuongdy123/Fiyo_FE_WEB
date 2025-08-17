@@ -870,6 +870,14 @@ img {
 .title-home {
   font-size: 18px;
 }
+.home-title {
+  font-size: 27px; /* To hơn bình thường */
+  font-weight: 900; /* Đậm nhất */
+  text-transform: uppercase;
+  color: #333f48; /* Màu chữ */
+  line-height: 1.2;
+}
+
 
 /* -------------------------
     MOBILE (dưới 768px)
@@ -1006,6 +1014,12 @@ img {
   .footer-content-toggle {
     margin-top: 8px;
   }
+  .footer-top h3{
+  font-size: 18px !important;
+ }
+ p{
+  font-size: 14px;
+ }
 }
 
 /* -------------------------
@@ -1056,12 +1070,7 @@ img {
    
     width: calc(33.3333% - 20px);
   }
-}
-.home-title {
-  font-size: 32px; /* To hơn bình thường */
-  font-weight: 900; /* Đậm nhất */
-  text-transform: uppercase;
-  color: #333f48; /* Màu chữ */
-  line-height: 1.2;
+ 
+ 
 }
 

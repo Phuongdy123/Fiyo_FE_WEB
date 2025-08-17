@@ -222,4 +222,15 @@
   .product-item__photo{
     height: auto !important;
   }
+ .box-banner {
+    flex: 0 0 90%;
+    max-width: 90%;
+    height: 420px;
+    position: relative;
+    overflow: hidden;
+}
+h2{
+  font-size: 18px;
+}
+
 }

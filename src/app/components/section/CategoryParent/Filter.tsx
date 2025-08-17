@@ -19,16 +19,15 @@ export default function FilterSection({
   const router = useRouter();
   const [category, SetCategory] = useState<ICategory[]>([]);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
-
-  // toggle state
+  const [openFilterMobile, setOpenFilterMobile] = useState(false);
   const [openCategory, setOpenCategory] = useState(false);
   const [openColor, setOpenColor] = useState(true);
   const [openPrice, setOpenPrice] = useState(true);
   const [openSize, setOpenSize] = useState(true);
-  const [openFilterMobile, setOpenFilterMobile] = useState(false);
 
   const updateFilter = (key: keyof IFilter, value: any) => {
     const prevValue = filters[key];
+
     const newValue =
       typeof value === "string" && typeof prevValue === "string"
         ? prevValue.toLowerCase() === value.toLowerCase()
@@ -157,32 +156,24 @@ export default function FilterSection({
 
   return (
     <>
-     
-     
-   <div
+      <div
         className="toolbar-filter__action"
         onClick={() => setOpenFilterMobile(true)}
       >
         <span>Bộ lọc</span>
       </div>
-      {/* overlay */}
       {openFilterMobile && (
         <div
           className="filter-overlay"
           onClick={() => setOpenFilterMobile(false)}
         ></div>
       )}
-
-
-      {/* sidebar filter */}
       <div
-        className={`columns__sidebar ${
+        className={`columns__sidebar columns__sidebar--desktop ${
           openFilterMobile ? "active" : ""
         }`}
       >
-        
         <div className="title-category">
-          
           <span>Lọc sản phẩm</span>
           <span
             className="close-filter"
@@ -191,11 +182,7 @@ export default function FilterSection({
             ×
           </span>
         </div>
-        
-
-        {/* ============== filter content ============== */}
         <div className="filter filter--category">
-          
           <div className="filter__item">
             <div
               className="filter__item-title"
@@ -204,7 +191,6 @@ export default function FilterSection({
               <span>Danh mục sản phẩm</span>
               <span className="btn-close">{openCategory ? "–" : "+"}</span>
             </div>
-
             {openCategory && (
               <div className="filter__item-content">
                 <div className="filter__options filter__options--link">
@@ -218,9 +204,7 @@ export default function FilterSection({
                       onClick={(e) => {
                         e.preventDefault();
                         setActiveSlug(cate.slug);
-                        router.push(
-                          `/page/category/${parentSlug}/${cate.slug}`
-                        );
+                        router.push(`/page/category/${parentSlug}/${cate.slug}`);
                       }}
                     >
                       {cate.name}
@@ -232,7 +216,6 @@ export default function FilterSection({
           </div>
         </div>
 
-        {/* kích cỡ */}
         <div className="filter filter--attribute">
           <div className="filter__item">
             <div
@@ -261,7 +244,6 @@ export default function FilterSection({
             )}
           </div>
 
-          {/* màu sắc */}
           <div className="filter__item">
             <div
               className="filter__item-title"
@@ -277,8 +259,7 @@ export default function FilterSection({
                     <div
                       key={color.key}
                       className={`filter__option-color ${
-                        filters.color?.toLowerCase() ===
-                        color.key.toLowerCase()
+                        filters.color?.toLowerCase() === color.key.toLowerCase()
                           ? "selected"
                           : ""
                       }`}
@@ -298,7 +279,6 @@ export default function FilterSection({
             )}
           </div>
 
-          {/* khoảng giá */}
           <div className="filter__item">
             <div
               className="filter__item-title"
@@ -317,7 +297,6 @@ export default function FilterSection({
                     <span className="range-value max">
                       {(filters.maxPrice ?? 399000).toLocaleString("vi-VN")}đ
                     </span>
-
                     <div className="track-container">
                       <div className="track" />
                       <div
@@ -365,10 +344,12 @@ export default function FilterSection({
             )}
           </div>
 
-          {/* nút áp dụng */}
           <div className="filter__item">
             <div className="filter__actions">
-              <div className="filter__apply">
+              <div
+                className="filter__apply"
+                onClick={() => setOpenFilterMobile(false)}
+              >
                 <span>Áp dụng</span>
               </div>
             </div>
