@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 export default function FilterEffectJS() {
   useEffect(() => {
-    // ==== Category Item (hover chỉ thêm class) ====
+    // ==== Category Item (hover + active) ====
     const categoryItems = document.querySelectorAll(".category-item");
 
     const handleMouseEnter = (e: Event) => {
@@ -23,24 +23,22 @@ export default function FilterEffectJS() {
       item.addEventListener("click", handleClick);
     });
 
-    // ==== Dropdown (chỉ click mới hiện) ====
+    // ==== Dropdown ====
     const dropdowns = document.querySelectorAll(".dropdown");
     const dropdownMenus: HTMLElement[] = [];
 
     const dropdownHandlers: {
       button: HTMLElement;
       menu: HTMLElement;
-      titleSpan: HTMLElement;
       clickButtonHandler: (e: MouseEvent) => void;
       clickMenuHandler: (e: MouseEvent) => void;
     }[] = [];
 
     dropdowns.forEach((dropdown) => {
       const button = dropdown.querySelector(".filter-button") as HTMLElement;
-      const titleSpan = button?.querySelector(".dropdown-title") as HTMLElement;
       const menu = dropdown.querySelector(".dropdown-menu") as HTMLElement;
 
-      if (!button || !titleSpan || !menu) return;
+      if (!button || !menu) return;
 
       dropdownMenus.push(menu);
 
@@ -56,7 +54,14 @@ export default function FilterEffectJS() {
       const clickMenuHandler = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
         if (target.tagName === "LI") {
-          titleSpan.textContent = target.textContent || "";
+          // Xóa active cũ
+          menu.querySelectorAll("li").forEach((li) =>
+            li.classList.remove("active")
+          );
+          // Thêm active cho li được chọn
+          target.classList.add("active");
+
+          // Không đổi titleSpan, chỉ đóng menu
           menu.classList.remove("show");
         }
       };
@@ -67,7 +72,6 @@ export default function FilterEffectJS() {
       dropdownHandlers.push({
         button,
         menu,
-        titleSpan,
         clickButtonHandler,
         clickMenuHandler,
       });

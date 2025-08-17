@@ -176,7 +176,7 @@ export default function LoginFormSection() {
               />
             </div>
 
-       <div
+       <div className="more"
   style={{
     display: "flex",
     alignItems: "center",

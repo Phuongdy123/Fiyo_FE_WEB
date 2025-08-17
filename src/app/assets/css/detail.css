@@ -601,6 +601,16 @@ background-repeat: no-repeat; /* Không lặp lại hình */
     flex-direction: column; /* xếp dọc */
     gap: 8px;
   }
+.product-detail-name {
+   font-size: 16px;
+}
 
+.product-code{
+    font-size: 14px;
+}
+.product-price-box .price, .product-price-box .price-original {
+font-size: 18px;
+line-height: 0;
+}
 }
 

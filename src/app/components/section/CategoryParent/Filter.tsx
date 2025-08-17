@@ -20,6 +20,13 @@ export default function FilterSection({
   const [category, SetCategory] = useState<ICategory[]>([]);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
+  // toggle state
+  const [openCategory, setOpenCategory] = useState(false);
+  const [openColor, setOpenColor] = useState(true);
+  const [openPrice, setOpenPrice] = useState(true);
+  const [openSize, setOpenSize] = useState(true);
+  const [openFilterMobile, setOpenFilterMobile] = useState(false);
+
   const updateFilter = (key: keyof IFilter, value: any) => {
     const prevValue = filters[key];
     const newValue =
@@ -48,10 +55,8 @@ export default function FilterSection({
         let targetParentId: string | null = null;
 
         if (currentCategory.parentId) {
-          // Đang ở danh mục con → lấy các danh mục cùng cấp
           targetParentId = currentCategory.parentId;
         } else {
-          // Đang ở danh mục cha → lấy danh mục con của nó
           targetParentId = currentCategory._id;
         }
 
@@ -151,130 +156,225 @@ export default function FilterSection({
   ];
 
   return (
-    <div className="columns__sidebar columns__sidebar--desktop">
-      <div className="filter filter--category">
-        <div className="filter__item">
-          <div className="filter__item-title">Danh mục sản phẩm</div>
-          <div className="filter__item-content">
-            <div className="filter__options filter__options--link">
-              {category.map((cate) => (
-                <a
-                  key={cate._id}
-                  href={`/page/category/${parentSlug}/${cate.slug}`}
-                  className={`filter__option-link ${activeSlug === cate.slug ? "active" : ""}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveSlug(cate.slug);
-                    router.push(`/page/category/${parentSlug}/${cate.slug}`);
-                  }}
-                >
-                  {cate.name}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
+    <>
+     
+     
+   <div
+        className="toolbar-filter__action"
+        onClick={() => setOpenFilterMobile(true)}
+      >
+        <span>Bộ lọc</span>
       </div>
+      {/* overlay */}
+      {openFilterMobile && (
+        <div
+          className="filter-overlay"
+          onClick={() => setOpenFilterMobile(false)}
+        ></div>
+      )}
 
-      <div className="filter filter--attribute">
-        {/* Kích cỡ */}
-        <div className="filter__item">
-          <div className="filter__item-title">Kích cỡ</div>
-          <div className="filter__item-content">
-            <div className="filter__options filter__options--size">
-              {currentSizes.map((size) => (
-                <div
-                  key={size}
-                  className={`filter__option-size ${filters.size === size ? "selected" : ""}`}
-                  onClick={() => updateFilter("size", size)}
-                >
-                  {size}
-                </div>
-              ))}
+
+      {/* sidebar filter */}
+      <div
+        className={`columns__sidebar ${
+          openFilterMobile ? "active" : ""
+        }`}
+      >
+        
+        <div className="title-category">
+          
+          <span>Lọc sản phẩm</span>
+          <span
+            className="close-filter"
+            onClick={() => setOpenFilterMobile(false)}
+          >
+            ×
+          </span>
+        </div>
+        
+
+        {/* ============== filter content ============== */}
+        <div className="filter filter--category">
+          
+          <div className="filter__item">
+            <div
+              className="filter__item-title"
+              onClick={() => setOpenCategory(!openCategory)}
+            >
+              <span>Danh mục sản phẩm</span>
+              <span className="btn-close">{openCategory ? "–" : "+"}</span>
             </div>
+
+            {openCategory && (
+              <div className="filter__item-content">
+                <div className="filter__options filter__options--link">
+                  {category.map((cate) => (
+                    <a
+                      key={cate._id}
+                      href={`/page/category/${parentSlug}/${cate.slug}`}
+                      className={`filter__option-link ${
+                        activeSlug === cate.slug ? "active" : ""
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveSlug(cate.slug);
+                        router.push(
+                          `/page/category/${parentSlug}/${cate.slug}`
+                        );
+                      }}
+                    >
+                      {cate.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Màu sắc */}
-        <div className="filter__item">
-          <div className="filter__item-title">Màu sắc</div>
-          <div className="filter__item-content">
-            <div className="filter__options filter__options--color">
-              {colors.map((color) => (
-                <div
-                  key={color.key}
-                  className={`filter__option-color ${
-                    filters.color?.toLowerCase() === color.key.toLowerCase() ? "selected" : ""
-                  }`}
-                  onClick={() => updateFilter("color", color.key)}
-                >
-                  <div
-                    title={color.key}
-                    className="filter__option-color--value"
-                    style={{
-                      backgroundImage: `url("https://2885371169.e.cdneverest.net/pub/media/attribute/swatch/images/${color.image}")`,
-                    }}
-                  />
-                </div>
-              ))}
+        {/* kích cỡ */}
+        <div className="filter filter--attribute">
+          <div className="filter__item">
+            <div
+              className="filter__item-title"
+              onClick={() => setOpenSize(!openSize)}
+            >
+              <span>Kích cỡ</span>
+              <span className="btn-close">{openSize ? "–" : "+"}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Khoảng giá */}
-        <div className="filter__item">
-          <div className="filter__item-title">
-            <span>Khoảng giá</span>
-          </div>
-          <div className="filter__item-content">
-            <div className="filter__options filter__options--price price-range">
-              <div className="price-range-slide">
-                <span className="range-value min">
-                  {(filters.minPrice ?? 99000).toLocaleString("vi-VN")}đ
-                </span>
-                <span className="range-value max">
-                  {(filters.maxPrice ?? 399000).toLocaleString("vi-VN")}đ
-                </span>
-
-                <div className="track-container">
-                  <div className="track" />
-                  <div
-                    className="track-highlight"
-                    style={{
-                      left: `${
-                        ((filters.minPrice ?? 99000) - 99000) / (399000 - 99000) * 100
-                      }%`,
-                      width: `${
-                        ((filters.maxPrice ?? 399000) - (filters.minPrice ?? 99000)) /
-                        (399000 - 99000) *
-                        100
-                      }%`,
-                    }}
-                  />
-                  <button
-                    className="vue-slider-dot track1"
-                    style={{
-                      left: `${
-                        ((filters.minPrice ?? 99000) - 99000) / (399000 - 99000) * 100
-                      }%`,
-                    }}
-                    onMouseDown={(e) => handleMouseDown(e, true)}
-                  />
-                  <button
-                    className="vue-slider-dot track2"
-                    style={{
-                      left: `${
-                        ((filters.maxPrice ?? 399000) - 99000) / (399000 - 99000) * 100
-                      }%`,
-                    }}
-                    onMouseDown={(e) => handleMouseDown(e, false)}
-                  />
+            {openSize && (
+              <div className="filter__item-content">
+                <div className="filter__options filter__options--size">
+                  {currentSizes.map((size) => (
+                    <div
+                      key={size}
+                      className={`filter__option-size ${
+                        filters.size === size ? "selected" : ""
+                      }`}
+                      onClick={() => updateFilter("size", size)}
+                    >
+                      {size}
+                    </div>
+                  ))}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* màu sắc */}
+          <div className="filter__item">
+            <div
+              className="filter__item-title"
+              onClick={() => setOpenColor(!openColor)}
+            >
+              <span>Màu sắc</span>
+              <span className="btn-close">{openColor ? "–" : "+"}</span>
+            </div>
+            {openColor && (
+              <div className="filter__item-content">
+                <div className="filter__options filter__options--color">
+                  {colors.map((color) => (
+                    <div
+                      key={color.key}
+                      className={`filter__option-color ${
+                        filters.color?.toLowerCase() ===
+                        color.key.toLowerCase()
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() => updateFilter("color", color.key)}
+                    >
+                      <div
+                        title={color.key}
+                        className="filter__option-color--value"
+                        style={{
+                          backgroundImage: `url("https://2885371169.e.cdneverest.net/pub/media/attribute/swatch/images/${color.image}")`,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* khoảng giá */}
+          <div className="filter__item">
+            <div
+              className="filter__item-title"
+              onClick={() => setOpenPrice(!openPrice)}
+            >
+              <span>Khoảng giá</span>
+              <span className="btn-close">{openPrice ? "–" : "+"}</span>
+            </div>
+            {openPrice && (
+              <div className="filter__item-content">
+                <div className="filter__options filter__options--price price-range">
+                  <div className="price-range-slide">
+                    <span className="range-value min">
+                      {(filters.minPrice ?? 99000).toLocaleString("vi-VN")}đ
+                    </span>
+                    <span className="range-value max">
+                      {(filters.maxPrice ?? 399000).toLocaleString("vi-VN")}đ
+                    </span>
+
+                    <div className="track-container">
+                      <div className="track" />
+                      <div
+                        className="track-highlight"
+                        style={{
+                          left: `${
+                            ((filters.minPrice ?? 99000) - 99000) /
+                            (399000 - 99000) *
+                            100
+                          }%`,
+                          width: `${
+                            ((filters.maxPrice ?? 399000) -
+                              (filters.minPrice ?? 99000)) /
+                            (399000 - 99000) *
+                            100
+                          }%`,
+                        }}
+                      />
+                      <button
+                        className="vue-slider-dot track1"
+                        style={{
+                          left: `${
+                            ((filters.minPrice ?? 99000) - 99000) /
+                            (399000 - 99000) *
+                            100
+                          }%`,
+                        }}
+                        onMouseDown={(e) => handleMouseDown(e, true)}
+                      />
+                      <button
+                        className="vue-slider-dot track2"
+                        style={{
+                          left: `${
+                            ((filters.maxPrice ?? 399000) - 99000) /
+                            (399000 - 99000) *
+                            100
+                          }%`,
+                        }}
+                        onMouseDown={(e) => handleMouseDown(e, false)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* nút áp dụng */}
+          <div className="filter__item">
+            <div className="filter__actions">
+              <div className="filter__apply">
+                <span>Áp dụng</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

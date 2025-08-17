@@ -1600,4 +1600,7 @@ img {
     background-color: #333f48 !important;
 ;
   }
+  .title{
+    font-size: 16px;
+  }
 }

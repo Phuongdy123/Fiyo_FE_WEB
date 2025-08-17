@@ -1564,3 +1564,132 @@ select {
   font-size: 16px;
   font-weight: 300;
 }
+
+
+@media (max-width: 768px) {
+    
+.modal-coupon__item-info{
+    padding: 8px;
+}
+.modal-coupon__content{
+    width: 100%;
+    border-radius: 0;
+}
+.modal-coupon__container{
+
+    padding: 20px;
+}
+.checkout-container--right{
+  width: 100%;
+  padding: 0;
+}
+.checkout-coupon__show{
+    font-size: 12px;
+}
+.checkout-step__title{
+    font-size: 14px;
+}
+.checkout-totals table tr td, .checkout-totals table tr th{
+    font-size: 12px;
+    white-space: unset;
+}
+.checkout-container{
+    display: flex;
+    flex-wrap: wrap;
+}
+.checkout-totals table .cpoint th, .checkout-totals table .khtt th {
+    font-size: 14px;
+    font-weight: 700;
+}
+.checkout-totals table .grand-totals td, .checkout-totals table .grand-totals th {
+    border-top: 1px solid #edf1f5;
+    padding-top: 24px;
+    padding-bottom: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 22px;
+}
+
+.checkout-container--left{
+    width: 100%;
+    padding: 0;
+}
+.shipping-address__item-top{
+    padding-right: 0;
+}
+.shipping-address__item-phone:before{
+    margin: 0 12px;
+}
+.shipping-address__item-name{
+    margin-bottom: 0;
+}
+.shipping-address__item-edit{
+    line-height: 35px;
+    font-size: 13px;
+}
+.shipping-address__item{
+    font-size: 13px;
+}
+.checkout-cart__item{
+    font-size: 12px;
+}
+.checkout-cart__item-photo{
+    margin-right: 10px;
+}
+.checkout-cart__item-info{
+    padding: 0;
+}
+.checkout-cart__item-name{
+    font-size: 12px;
+}
+.checkout-cart__item-option{
+    font-size: 11px;
+}
+.checkout-cart__item-info{
+    width: 100%;
+}
+.checkout-cart__item-qty{
+    width: auto;
+}
+.checkout-cart__item {
+  position: relative; /* để con absolute bám vào */
+}
+  .checkout-cart__item-price,
+  .checkout-cart__item-price--normal {
+    position: absolute;
+  left: 0;          /* dính sát bên phải */
+  bottom: -7px;          /* căn giữa theo chiều dọc */
+  transform: translateY(-50%);
+  white-space: nowrap;
+  text-align: right;
+  font-size: 12px;
+  }
+.amount{
+    font-size: 13px;
+}
+.checkout-shipping__form .row:first-child > .col-sm-6:nth-child(-n+3) {
+  width: 100% !important;
+}
+
+
+.shipping-method__option-price {
+  white-space: nowrap;            /* không xuống dòng */
+  font-weight: 600;
+}
+.shipping-method__option{
+    padding: 8px;
+}
+.payment-method__option-content{
+    min-height: 45px;
+}
+.payment-method__option {
+    
+    font-size: 12px;
+  
+}
+.btn {
+    width: 100%;
+
+}
+}
+

@@ -1211,3 +1211,46 @@ select {
   font-size: 16px;
   font-weight: 300;
 }
+@media (max-width: 768px) {
+.account-container {
+flex-wrap: wrap;
+}
+.account-sidebar{
+    width: 100%;
+    min-width: 95%;
+    margin: 0 auto;
+    padding-bottom: 20px;
+}
+.account-information__title {
+    margin: 0 0 24px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 30px;
+    display: block;
+}
+.voucher{
+    width: 100%;
+}
+.condition{
+    width: auto;
+}
+.box-love--product{
+    grid-template-columns: auto;
+}
+h2{
+    font-size: 16px;
+}
+.addresses__item-info{
+    font-size: 12px;
+}
+.addresses__item-edit{
+    font-size: 12px;
+}
+.addresses__item-default, .addresses__item-type{
+    font-size: 12px;
+}
+
+.address-new__form .row:first-child > .col-sm-6:nth-child(-n+3) {
+  width: 100% !important;
+}
+}

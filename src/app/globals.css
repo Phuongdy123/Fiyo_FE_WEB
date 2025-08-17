@@ -887,11 +887,12 @@ img {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    height: 90px;
+    height: 100px;
    
   }
   .voucher-content {
-    margin-top: 3px;
+  
+    
     flex: 0 0 90%;
     scroll-snap-align: start;
     width: auto;
@@ -961,6 +962,7 @@ img {
     color: #333f48; /* Màu chữ */
     line-height: 1.2;
   }
+  
   .producthot {
     flex-direction: column;
     gap: 15px;
@@ -1051,6 +1053,7 @@ img {
 
   /* Voucher: 3 cái / hàng */
   .voucher-content {
+   
     width: calc(33.3333% - 20px);
   }
 }
@@ -1061,3 +1064,4 @@ img {
   color: #333f48; /* Màu chữ */
   line-height: 1.2;
 }
+

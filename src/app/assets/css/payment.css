@@ -456,3 +456,22 @@ a {
   background-color: #28a745;
   color: white;
 }
+
+
+@media (max-width: 768px) {
+    .checkout-page {
+    min-height: 100vh;
+    background-color: #f5f5f5;
+    width: 85%;
+    margin:0 auto;
+}
+.checkout-success__product-qty{
+    display: none;
+}
+
+.checkout-success__product-price{
+    width: auto;
+}
+
+
+}
