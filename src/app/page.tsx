@@ -67,7 +67,11 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <h3 className="home-title">ƯU ĐÃI NỖI BẬC</h3>
+         <div className="title-home">
+          <h2>
+           ƯU ĐÃI NỔI BẬC
+          </h2>
+        </div>
         <VoucherSection></VoucherSection>
         <CollectionSection></CollectionSection>
         <div className="title-home">
@@ -75,6 +79,7 @@ export default function Home() {
             FLASH<span style={{ color: "red" }}>SALE</span>
           </h2>
         </div>
+       
         <ProductFlashSaleSection></ProductFlashSaleSection>
         <div className="banner-hot">
           <img src="https://2885371169.e.cdneverest.net/media/Simiconnector/TSDH_cate_desktop-210525.webp" />
