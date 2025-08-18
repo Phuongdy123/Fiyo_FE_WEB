@@ -18,7 +18,7 @@ export default function ProductFlashSaleSection() {
       let totalPagesFromApi = 1;
 
       while (tempList.length < limit) {
-        const res = await fetch(`https://fiyo.click/api/products/pro/?page=${currentPageFetch}&limit=${limit}`);
+        const res = await fetch(`http://localhost:3000/api/products/pro/?page=${currentPageFetch}&limit=${limit}`);
         const data = await res.json();
 
         totalPagesFromApi = data.totalPages || 1;

@@ -10,7 +10,7 @@ export default function HotProductSection() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let products: IProduct[] = await getAllProductSaleCount("https://fiyo.click/api/products");
+        let products: IProduct[] = await getAllProductSaleCount("http://localhost:3000/api/products");
 
         // Lọc sản phẩm có ảnh
         const filtered = products.filter((p) => p.images && p.images.length > 0);

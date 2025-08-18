@@ -32,7 +32,7 @@ export default function AccountPage({
     async function fetchOrderDetail() {
       try {
         const res = await getOrderDetailByUserId(
-          `https://fiyo.click/api/orderDetail/${id}`
+          `http://localhost:3000/api/orderDetail/${id}`
         );
         setOrderDetail(res);
         console.log("objectsss", res);
@@ -95,7 +95,7 @@ export default function AccountPage({
       formData.append("order_detail_id", order_detail_id);
       images.forEach((file) => formData.append("images", file));
 
-      const res = await fetch("https://fiyo.click/api/review", {
+      const res = await fetch("http://localhost:3000/api/review", {
         method: "POST",
         body: formData,
       });

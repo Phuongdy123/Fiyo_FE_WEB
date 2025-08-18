@@ -30,7 +30,7 @@ export default function CancelOrderModal({
 
   const handleCancel = async () => {
     try {
-      const res = await fetch(`https://fiyo.click/api/orders/${orderId}/cancel`, {
+      const res = await fetch(`http://localhost:3000/api/orders/${orderId}/cancel`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

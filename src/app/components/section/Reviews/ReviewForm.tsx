@@ -45,7 +45,7 @@ export default function SectionReviewForm({
       const result: string[] = [];
       for (const product of uniqueProducts) {
         const res = await fetch(
-          `https://fiyo.click/api/review/check/${product._id}/${product.user_id}`
+          `http://localhost:3000/api/review/check/${product._id}/${product.user_id}`
         );
         const data = await res.json();
         if (data.reviewed) result.push(product._id);

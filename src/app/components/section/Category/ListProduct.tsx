@@ -54,7 +54,7 @@ export default function ListProductCate({
 
         const allProducts = await getProductsByCategoryParent(parentCategoryId);
 
-        const response = await fetch("https://fiyo.click/api/products/filter", {
+        const response = await fetch("http://localhost:3000/api/products/filter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ products: allProducts, filters }),

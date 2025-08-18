@@ -42,7 +42,7 @@ export default function VoucherSection() {
           vouchers = response.vouchers || [];
         } else {
           // Fetch public vouchers if not logged in
-          vouchers = await getAllVoucher("https://fiyo.click/api/voucher");
+          vouchers = await getAllVoucher("http://localhost:3000/api/voucher");
         }
         // Sort vouchers by expired_at (newest first) and take top 3
         const sortedVouchers = vouchers
@@ -54,8 +54,7 @@ export default function VoucherSection() {
           .slice(0, 3); // Limit to 3 newest
         setVoucherList(sortedVouchers);
       } catch (error) {
-        console.error("Lỗi khi lấy danh sách voucher:", error);
-        showToast("Không thể tải danh sách voucher. Vui lòng thử lại!", "error");
+   
       }
     };
     fetchVouchers();

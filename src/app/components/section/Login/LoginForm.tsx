@@ -29,7 +29,7 @@ export default function LoginFormSection() {
     }
 
     try {
-      const res = await fetch("https://fiyo.click/api/user/login", {
+      const res = await fetch("http://localhost:3000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -70,7 +70,7 @@ export default function LoginFormSection() {
     }
 
     try {
-      const res = await fetch("https://fiyo.click/api/user/login-google", {
+      const res = await fetch("http://localhost:3000/api/user/login-google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: credentialResponse.credential }),
