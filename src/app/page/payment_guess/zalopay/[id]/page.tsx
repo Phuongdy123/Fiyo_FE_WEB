@@ -19,6 +19,7 @@ interface OrderProduct {
       _id: string;
       color: string;
     };
+    size_id:string,
     
   };
 }
