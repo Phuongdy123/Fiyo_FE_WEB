@@ -279,21 +279,13 @@ export default function DetailSection({ product }: { product: IProduct }) {
         
     
       </div>
-      
-<ShopInfoCard
-  name="Pawx Store"
-  onlineText="Online 1 Giờ Trước"
-  stats={{
-    reviews: 162,
-    responseRate: 96,
-    joinedText: "7 năm trước",
-    products: 33,
-    responseTimeText: "trong vài giờ",
-    followers: 955,
-  }}
-  onChat={() => console.log("Chat ngay")}
-  onViewShop={() => console.log("Xem shop")}
-/>
+ {product?.shop_id && (
+  <ShopInfoCard
+    shopId={String((product as any).shop_id)}
+    onChat={(id) => console.log("Chat shop", id)}
+    onViewShop={(id) => console.log("Xem shop", id)}
+  />
+)}
       {showAddPopup && (
         <AddToCartPopup
           image={product.images?.[0]}
