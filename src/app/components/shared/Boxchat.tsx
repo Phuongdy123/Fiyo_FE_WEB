@@ -2,13 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import "@/app/assets/css/boxchat.css";
-
-type Product = {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-};
+import { useCart } from "@/app/context/Ccart";
+import type { ICart } from "@/app/untils/ICart";
 
 type CardAction =
   | { type: "add_to_cart"; label: string; productId: string; quantity?: number }
@@ -24,14 +19,38 @@ type ProductCard = {
   description_short?: string;
   url?: string;
   actions?: CardAction[];
+
+  variants?: any[];
 };
 
 type BotResponse = {
   reply: string;
   type?: "message" | "product_cards" | "add_to_cart";
   cards?: ProductCard[];
-  products?: Product[];
+  products?: any[]; // khi bot muốn add trực tiếp
 };
+
+const VNPrice = (n: number) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+    Number(n || 0)
+  );
+
+// map object từ bot → ICart của giỏ
+const toICart = (p: any): ICart => ({
+  id: p.id || p._id || "",
+  name: p.name || "",
+  price: Number(p.price || 0),
+  image: p.image || "",
+
+  variant_id: p.variant_id || p.variantId || "",
+  variant: p.variant || p.color || "",
+
+  size: p.size || "",
+  size_id: p.size_id || p.sizeId,
+
+  quantity: Number(p.quantity || 1),
+  quantity_Product: Number(p.quantity_Product ?? p.stock ?? 0),
+});
 
 const API_BASE =
   (typeof window !== "undefined" &&
@@ -58,7 +77,12 @@ const chatApi = {
   },
 };
 
+/* =========================
+   Component
+========================= */
 export default function BoxChatComponent() {
+  const { addToCart } = useCart();
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
   const emojiBtnRef = useRef<HTMLButtonElement>(null);
@@ -70,42 +94,8 @@ export default function BoxChatComponent() {
   const btnCloseRef = useRef<HTMLButtonElement>(null);
   const chatListRef = useRef<HTMLUListElement>(null);
 
-  const notifCloseBtnRef = useRef<HTMLButtonElement>(null); 
+  const notifCloseBtnRef = useRef<HTMLButtonElement>(null);
   const headerHeight = 133;
-
-  const VNPrice = (n: number) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(Number(n || 0));
-
-  const normalizeProduct = (p: any): Product => ({
-    id: p?.id || p?._id || "",
-    name: p?.name || "",
-    image: p?.image || "",
-    price: Number(p?.price || 0),
-  });
-
-  const getCart = (): Product[] => {
-    try {
-      const raw = localStorage.getItem("cart");
-      return raw ? (JSON.parse(raw) as Product[]) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const setCart = (items: Product[]) => {
-    localStorage.setItem("cart", JSON.stringify(items));
-  };
-
-  const addToCart = (products: Product[]) => {
-    if (!products?.length) return;
-    const current = getCart();
-    const merged = [...current, ...products.map(normalizeProduct)];
-    setCart(merged);
-    addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
-  };
 
   const addTextMessage = (
     sender: "user" | "bot",
@@ -143,84 +133,115 @@ export default function BoxChatComponent() {
     chatList.scrollTop = chatList.scrollHeight;
   };
 
-  // NEW: render product cards như FE cũ (UI DOM thuần)
+  // Render product cards + picker Màu/Size
   const addProductCardsMessage = (text: string, cards: ProductCard[] = []) => {
     const chatList = chatListRef.current;
     if (!chatList) return;
 
-    // khối text mở đầu
     addTextMessage("bot", text || "Sản phẩm gợi ý cho bạn:", true);
 
-    // khối cards
     const wrap = document.createElement("li");
     wrap.className = "chat-item bot";
     const avatarHTML = `
-      <div class="avatar-name-msg-item">
-        <div><span class="ant-avatar messages-item-avatar ant-avatar-circle ant-avatar-image" style="width: 32px; height: 32px; line-height: 32px; font-size: 18px">
-          <img src="https://api.oncustomer.canifa.com/user/file/10dbc370-8b4b-11ee-bcfa-1bc0639711b2.png" />
-        </span></div>
-        <div class="agent-name">FIYO BOT</div>
-      </div>`;
+    <div class="avatar-name-msg-item">
+      <div><span class="ant-avatar messages-item-avatar ant-avatar-circle ant-avatar-image" style="width: 32px; height: 32px; line-height: 32px; font-size: 18px">
+        <img src="https://api.oncustomer.canifa.com/user/file/10dbc370-8b4b-11ee-bcfa-1bc0639711b2.png" />
+      </span></div>
+      <div class="agent-name">FIYO BOT</div>
+    </div>`;
 
     const cardsHTML = (cards || [])
       .map((c) => {
         const id = c.id || c._id || "";
         const priceText = c.price_text ?? VNPrice(Number(c.price || 0));
-        const actions =
-          c.actions && c.actions.length
-            ? c.actions
-            : [
-                { type: "buy_now", label: "Mua ngay", productId: id, url: c.url } as CardAction,
-                { type: "add_to_cart", label: "Thêm vào giỏ", productId: id } as CardAction,
-              ];
+        const variants = (c as any).variants || [];
+        const hasVariants = Array.isArray(variants) && variants.length > 0;
 
-        return `
-          <div class="fiyo-product-card">
-            <img class="fiyo-product-img" src="${c.image || ""}" alt="${c.name || ""}" onerror="this.src='https://via.placeholder.com/120?text=No+Image'"/>
-            <div class="fiyo-product-info">
-              <div class="fiyo-product-name">${c.name || ""}</div>
-              <div class="fiyo-product-price">${priceText}</div>
-              ${
-                c.description_short
-                  ? `<div class="fiyo-product-desc">${c.description_short}</div>`
-                  : ``
-              }
-              <div class="fiyo-product-actions">
-                ${actions
-                  .map(
-                    (a) => `
-                    <button
-                      class="fiyo-product-btn ${a.type === "buy_now" ? "primary" : "secondary"}"
-                      data-action="${a.type}"
-                      data-product-id="${id}"
-                      ${"url" in a && (a as any).url ? `data-url="${(a as any).url}"` : ""}
-                    >
-                      ${a.label}
-                    </button>`
-                  )
-                  .join("")}
-              </div>
+        const actions = c.actions?.length
+          ? c.actions
+          : [
+              { type: "add_to_cart", label: "Thêm vào giỏ", productId: id },
+              { type: "buy_now", label: "Mua ngay", productId: id, url: c.url },
+            ];
+
+        const pickerHTML = hasVariants
+          ? `
+      <div class="variant-wrap"
+           data-variants='${JSON.stringify(variants).replace(/'/g, "&apos;")}'
+           data-selected-color="" data-selected-size="" data-selected-sku="">
+        <div class="variant-row">
+          <div class="variant-block">
+            <div class="variant-label">Màu</div>
+            <div class="color-list">
+             ${variants
+               .map((v: any) => {
+                 const label =
+                   v.color || v.variant || v.name || v.title || "Màu";
+                 const total = (v.sizes || []).reduce(
+                   (t: number, s: any) => t + (s.quantity || 0),
+                   0
+                 );
+                 return `<button type="button" class="pill color" data-color="${label}" ${
+                   total <= 0 ? 'data-disabled="1"' : ""
+                 }>${label}</button>`;
+               })
+               .join("")}
+
             </div>
           </div>
-        `;
+          <div class="variant-block">
+            <div class="variant-label">Size</div>
+            <div class="size-list"><span class="muted">Chọn màu trước</span></div>
+          </div>
+        </div>
+      </div>`
+          : "";
+
+        return `
+      <div class="fiyo-product-card">
+        <img class="fiyo-product-img" src="${c.image || ""}" alt="${
+          c.name || ""
+        }" onerror="this.src='https://via.placeholder.com/120?text=No+Image'"/>
+        <div class="fiyo-product-info">
+          <div class="fiyo-product-name">${c.name || ""}</div>
+          <div class="fiyo-product-price">${priceText}</div>
+          ${
+            c.description_short
+              ? `<div class="fiyo-product-desc">${c.description_short}</div>`
+              : ``
+          }
+          ${pickerHTML}
+          <div class="fiyo-product-actions">
+            ${actions
+              .map(
+                (a: any) => `
+              <button class="fiyo-product-btn ${
+                a.type === "buy_now" ? "primary" : "secondary"
+              }"
+                      data-action="${a.type}" data-product-id="${id}"
+                      ${a.url ? `data-url="${a.url}"` : ``}>${a.label}</button>`
+              )
+              .join("")}
+          </div>
+        </div>
+      </div>`;
       })
       .join("");
 
     wrap.innerHTML = `
-      <div class="messages-item-inner">
-        ${avatarHTML}
-        <div class="message-content-wrapper">
-          <div class="message-content has-photo-false">
-            <div class="fiyo-product-list">${cardsHTML}</div>
-          </div>
+    <div class="messages-item-inner">
+      ${avatarHTML}
+      <div class="message-content-wrapper">
+        <div class="message-content has-photo-false">
+          <div class="fiyo-product-list">${cardsHTML}</div>
         </div>
       </div>
-    `;
-
+    </div>`;
     chatList.appendChild(wrap);
     chatList.scrollTop = chatList.scrollHeight;
   };
 
+  /* ========== useEffect #1: mở/đóng widget + auto-height input ========== */
   useEffect(() => {
     const wrapper0 = wrapperState0Ref.current;
     const wrapper1 = wrapperState1Ref.current;
@@ -238,15 +259,13 @@ export default function BoxChatComponent() {
 
         try {
           const data = await chatApi.welcome();
-          addTextMessage("bot", data.reply || "Xin chào! Tôi có thể giúp gì cho bạn?", true);
+          addTextMessage(
+            "bot",
+            data.reply || "Xin chào! Tôi có thể giúp gì cho bạn?",
+            true
+          );
         } catch {
-          try {
-            const res = await fetch("http://localhost:3000/chat/welcome");
-            const data = await res.json();
-            addTextMessage("bot", data.reply || "Xin chào! Tôi có thể giúp gì cho bạn?", true);
-          } catch {
-            addTextMessage("bot", "Xin chào! Tôi có thể giúp gì cho bạn?", true);
-          }
+          addTextMessage("bot", "Xin chào! Tôi có thể giúp gì cho bạn?", true);
         }
       };
 
@@ -276,6 +295,7 @@ export default function BoxChatComponent() {
     }
   }, []);
 
+  /* ========== useEffect #2: event delegation + gửi chat ========== */
   useEffect(() => {
     const input = inputRef.current!;
     const sendBtn = sendBtnRef.current!;
@@ -283,47 +303,217 @@ export default function BoxChatComponent() {
     const fileInput = fileInputRef.current!;
     const chatList = chatListRef.current!;
 
-    // Event delegation cho nút product actions trong chat
+    // Event delegation: chọn màu/size + add to cart
     const onChatListClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target) return;
 
-      const btn = target.closest("button[data-action]") as HTMLButtonElement | null;
+      // Chọn Màu
+      const colorBtn = target.closest(
+        ".pill.color"
+      ) as HTMLButtonElement | null;
+      if (colorBtn) {
+        if (colorBtn.getAttribute("data-disabled") === "1") return;
+        const card = colorBtn.closest(".fiyo-product-card")!;
+        const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
+        if (!wrap) return;
+
+        card
+          .querySelectorAll(".pill.color")
+          .forEach((el) => el.classList.remove("is-active"));
+        colorBtn.classList.add("is-active");
+
+        const color = colorBtn.getAttribute("data-color") || "";
+        wrap.dataset.selectedColor = color;
+
+        // render size theo màu
+        try {
+          const variants = JSON.parse(
+            (wrap.getAttribute("data-variants") || "[]").replace(/&apos;/g, "'")
+          );
+          const v = variants.find((x: any) => {
+            const cand = [x.color, x.variant, x.name, x.title].map((s: any) =>
+              (s || "").toLowerCase().trim()
+            );
+            return cand.includes((color || "").toLowerCase().trim());
+          });
+          const sizeBox = card.querySelector(".size-list") as HTMLElement;
+          if (sizeBox) {
+            sizeBox.innerHTML = v?.sizes?.length
+              ? v.sizes
+                  .map((s: any) => {
+                    const sizeLabel = s.size || s.label || s.name || "";
+                    return `<button type="button" class="pill size"
+                  data-size="${sizeLabel}" data-sku="${s.sku || ""}"
+                  ${
+                    Number(s.quantity) <= 0 ? 'data-disabled="1"' : ""
+                  }>${sizeLabel}</button>`;
+                  })
+                  .join("")
+              : `<span class="muted">Hết hàng</span>`;
+          }
+
+          wrap.dataset.selectedSize = "";
+          wrap.dataset.selectedSku = "";
+        } catch {}
+        return;
+      }
+
+      // Chọn Size
+      const sizeBtn = target.closest(".pill.size") as HTMLButtonElement | null;
+      if (sizeBtn) {
+        // if (sizeBtn.getAttribute("data-disabled")==="1") return; // tạm comment để test
+        const card = sizeBtn.closest(".fiyo-product-card")!;
+        const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
+        if (!wrap) return;
+
+        card
+          .querySelectorAll(".pill.size")
+          .forEach((el) => el.classList.remove("is-active"));
+        sizeBtn.classList.add("is-active");
+
+        wrap.dataset.selectedSize = sizeBtn.getAttribute("data-size") || "";
+        wrap.dataset.selectedSku = sizeBtn.getAttribute("data-sku") || "";
+        return;
+      }
+
+      // Nút hành động
+      const btn = target.closest(
+        "button[data-action]"
+      ) as HTMLButtonElement | null;
       if (!btn) return;
 
-      const action = btn.getAttribute("data-action") as "add_to_cart" | "buy_now";
+      const action = btn.getAttribute("data-action") as
+        | "add_to_cart"
+        | "buy_now";
       const productId = btn.getAttribute("data-product-id") || "";
       const url = btn.getAttribute("data-url") || "";
 
-      if (!action || !productId) return;
+      const card = btn.closest(".fiyo-product-card")!;
+      const name =
+        (card.querySelector(".fiyo-product-name") as HTMLElement)?.innerText ||
+        "";
+      const image =
+        (card.querySelector(".fiyo-product-img") as HTMLImageElement)?.src ||
+        "";
+      const priceText =
+        (card.querySelector(".fiyo-product-price") as HTMLElement)?.innerText ||
+        "";
+      const price = Number((priceText || "").replace(/[^\d]/g, "")) || 0;
 
-      if (action === "add_to_cart") {
-        // lấy thông tin tối thiểu từ DOM card (name / img / price)
-        const card = btn.closest(".fiyo-product-card")!;
-        const name = (card.querySelector(".fiyo-product-name") as HTMLElement)?.innerText || "";
-        const image = (card.querySelector(".fiyo-product-img") as HTMLImageElement)?.src || "";
-        const priceText = (card.querySelector(".fiyo-product-price") as HTMLElement)?.innerText || "";
-        const price = Number((priceText || "").replace(/[^\d]/g, "")) || 0;
+      // Nếu có picker -> bắt buộc chọn đủ
+      const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
+      if (wrap) {
+       const color = wrap.dataset.selectedColor || "";
+const sizeLabel = wrap.dataset.selectedSize || "";
+const sku = wrap.dataset.selectedSku || "";
+if (!color || !sizeLabel) {
+  addTextMessage("bot", "Vui lòng chọn <b>màu</b> và <b>size</b> trước khi thêm vào giỏ.", true);
+  return;
+}
 
-        addToCart([{ id: productId, name, image, price }]);
+let variantId = "";
+let sizeId = "";
+let qtyInStock = 0;
+
+try {
+  const variants = JSON.parse((wrap.getAttribute("data-variants") || "[]").replace(/&apos;/g, "'"));
+
+  // 1) tìm variant theo tên màu (color/variant/name/title)
+  let v = variants.find((x:any) => {
+    const cand = [x.color, x.variant, x.name, x.title].map((s:any)=> (s||"").toLowerCase().trim());
+    return cand.includes(color.toLowerCase().trim());
+  });
+
+  // 2) tìm size trong variant theo sizeLabel hoặc sku
+  let s = v?.sizes?.find((x:any) => {
+    const label = (x.size || x.label || x.name || "").toLowerCase().trim();
+    return label === sizeLabel.toLowerCase().trim() || (!!sku && x.sku === sku);
+  });
+
+  // 3) fallback: nếu chưa thấy, quét toàn bộ variants bằng sku/size
+  if (!s) {
+    for (const vv of variants) {
+      const ss = (vv.sizes || []).find((x:any) => {
+        const label = (x.size || x.label || x.name || "").toLowerCase().trim();
+        return label === sizeLabel.toLowerCase().trim() || (!!sku && x.sku === sku);
+      });
+      if (ss) { v = vv; s = ss; break; }
+    }
+  }
+
+  // Lấy id với nhiều phương án fallback
+  variantId = v?._id || v?.id || v?.variant_id || v?.variantId || "";
+  sizeId    = s?._id || s?.id || s?.size_id   || s?.sizeId    || "";
+  qtyInStock = Number(s?.quantity || 0);
+} catch {
+  // noop
+}
+
+// 4) Fallback cuối: vẫn cho add bằng ID an toàn (để Context merge key ổn định)
+if (!variantId) variantId = `${productId}:${color}`;        // pseudo-variant id
+if (!sizeId)    sizeId    = `${variantId}:${sizeLabel}`;    // pseudo-size id
+
+const itemForCart /* ICart */ = {
+  id: productId,
+  name,
+  image,
+  price,
+  quantity: 1,
+  quantity_Product: qtyInStock,
+  variant: color,
+  variant_id: variantId,
+  size: sizeLabel,
+  size_id: sizeId
+};
+
+addToCart(itemForCart);
+addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
+
+if (action === "buy_now" && url) {
+  const qp = sku ? `?sku=${encodeURIComponent(sku)}` : "";
+  window.location.href = `${url}${qp}`;
+}
+return;
+
       }
 
+      // Card không có variant -> thêm tối thiểu (variant/size rỗng)
+      if (action === "add_to_cart") {
+        const item: ICart = {
+          id: productId,
+          name,
+          price,
+          image,
+          variant_id: "",
+          variant: "",
+          size: "",
+          quantity: 1,
+          quantity_Product: 0,
+        };
+        addToCart(item);
+        addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
+      }
       if (action === "buy_now") {
-        // thêm vào giỏ rồi điều hướng nếu có url
-        const card = btn.closest(".fiyo-product-card")!;
-        const name = (card.querySelector(".fiyo-product-name") as HTMLElement)?.innerText || "";
-        const image = (card.querySelector(".fiyo-product-img") as HTMLImageElement)?.src || "";
-        const priceText = (card.querySelector(".fiyo-product-price") as HTMLElement)?.innerText || "";
-        const price = Number((priceText || "").replace(/[^\d]/g, "")) || 0;
-
-        addToCart([{ id: productId, name, image, price }]);
+        const item: ICart = {
+          id: productId,
+          name,
+          price,
+          image,
+          variant_id: "",
+          variant: "",
+          size: "",
+          quantity: 1,
+          quantity_Product: 0,
+        };
+        addToCart(item);
         if (url) window.location.href = url;
       }
-    };
+    }; // đóng onChatListClick
 
     chatList.addEventListener("click", onChatListClick);
 
-    /** Gửi chat */
+    // Gửi chat
     sendBtn.onclick = async () => {
       const text = input.value.trim();
       const userId = localStorage.getItem("userId") || undefined;
@@ -340,7 +530,11 @@ export default function BoxChatComponent() {
         const data = await chatApi.ask({ message: text, userId });
 
         if (!data.type || data.type === "message") {
-          addTextMessage("bot", data.reply || "Mình đã nhận được tin nhắn của bạn.", false);
+          addTextMessage(
+            "bot",
+            data.reply || "Mình đã nhận được tin nhắn của bạn.",
+            false
+          );
         } else if (data.type === "product_cards") {
           const safeCards =
             (data.cards || []).map((c) => ({
@@ -350,11 +544,18 @@ export default function BoxChatComponent() {
             })) || [];
           addProductCardsMessage(data.reply || "Gợi ý sản phẩm:", safeCards);
         } else if (data.type === "add_to_cart") {
-          if (data.products?.length) addToCart(data.products as Product[]);
-          addTextMessage("bot", data.reply || "Đã thêm sản phẩm vào giỏ.", false);
+          const itemsRaw = (data.products as any[]) ?? [];
+          const items = itemsRaw.map(toICart);
+          items.forEach((item) => addToCart(item));
+          addTextMessage(
+            "bot",
+            data.reply || "Đã thêm sản phẩm vào giỏ.",
+            false
+          );
         }
         return; // thành công -> kết thúc
       } catch {
+        // fallback endpoint cũ
       }
 
       try {
@@ -383,27 +584,43 @@ export default function BoxChatComponent() {
             })) || [];
           addProductCardsMessage(data.reply || "Gợi ý sản phẩm:", safeCards);
         } else if (data.type === "add_to_cart") {
-          if (data.products?.length) addToCart(data.products as Product[]);
-          addTextMessage("bot", data.reply || "Đã thêm sản phẩm vào giỏ.", false);
+          const itemsRaw = (data.products as any[]) ?? [];
+          const items = itemsRaw.map(toICart);
+          items.forEach((item) => addToCart(item));
+          addTextMessage(
+            "bot",
+            data.reply || "Đã thêm sản phẩm vào giỏ.",
+            false
+          );
         }
       } catch (err) {
         console.error("Chat error:", err);
-        addTextMessage("bot", "Xin lỗi, có lỗi xảy ra khi gửi tin nhắn.", false);
+        addTextMessage(
+          "bot",
+          "Xin lỗi, có lỗi xảy ra khi gửi tin nhắn.",
+          false
+        );
       }
     };
 
+    // Emoji
     emojiBtn.onclick = () => {
       input.value += "😊";
       input.dispatchEvent(new Event("input"));
     };
 
+    // Gửi file
     fileInput.onchange = () => {
       const file = fileInput.files?.[0];
       if (!file) return;
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const imgHTML = `<img src="${e.target?.result}" style="max-width: 200px; border-radius: 8px;" alt="${file.name}" />`;
+          const imgHTML = `<img src="${
+            (e.target as FileReader).result
+          }" style="max-width: 200px; border-radius: 8px;" alt="${
+            file.name
+          }" />`;
           addTextMessage("user", imgHTML, true);
         };
         reader.readAsDataURL(file);
@@ -412,11 +629,16 @@ export default function BoxChatComponent() {
       }
     };
 
+    // cleanup
     return () => {
       chatList.removeEventListener("click", onChatListClick);
+      sendBtn.onclick = null;
+      emojiBtn.onclick = null;
+      fileInput.onchange = null;
     };
   }, []);
 
+  /* ========== JSX ========== */
   return (
     <div>
       {/* Box chat thu gọn */}
@@ -469,7 +691,9 @@ export default function BoxChatComponent() {
                   <div className="main-content-inner minimized">
                     <div className="new-conversation-header">
                       <div className="description-group">
-                        <h3 className="title margin-0 title-2">CHAT BOT FIYO</h3>
+                        <h3 className="title margin-0 title-2">
+                          CHAT BOT FIYO
+                        </h3>
                         <p className="sub-title">
                           Hãy hỏi bất cứ điều gì hoặc chia sẻ phản hồi của bạn
                           liên quan đến SP &amp; DV của FIYO.
@@ -556,12 +780,11 @@ export default function BoxChatComponent() {
                   </div>
                 </div>
               </div>
+              {/* end input */}
             </div>
           </div>
         </div>
       </div>
-
-     
     </div>
   );
 }
