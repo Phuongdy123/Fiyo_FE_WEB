@@ -7,6 +7,7 @@ import MiniCartComponent from "../MiniCart";
 import { useCart } from "../../../context/Ccart";
 import { useMinicart } from "@/app/context/MinicartContext";
 import Link from "next/link"; // Thêm import Link
+import AccountMenu from "../AccountMenu";
 
 export default function Header() {
   const { toggle } = useMinicart();
@@ -182,19 +183,9 @@ export default function Header() {
               >
                 <span>Cửa hàng</span>
               </Link>
-              <Link
-                href={user ? "/page/account" : "/page/login"}
-                className={`header__icon-account--group ${
-                  pathname === (user ? "/page/account" : "/page/login") ? "nuxt-link-active" : ""
-                }`}
-              >
-                <div
-                  className="header__icon-account header__icon-account--mobile header__icon"
-                  style={{ cursor: "pointer" }}
-                >
-                  <span>Tài khoản</span>
-                </div>
-              </Link>
+              <div className="header__icon-account">
+  <AccountMenu />  {/* Popup tài khoản */}
+</div>
               <div className="header__icon-cart header__icon" onClick={toggle}>
                 <span>Giỏ hàng</span>
                 <div className="header__icon-count">

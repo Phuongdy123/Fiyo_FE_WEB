@@ -9,6 +9,7 @@ import AddToCartPopup from "@/app/components/shared/CartNoffication";
 import HomeEffectsJs from "@/app/effects/home";
 import DetailEffect from "@/app/effects/detail";
 import CommentComponent from "../../shared/Comment";
+import ShopInfoCard from '../../shared/ShopInfoCard';
 
 export default function DetailSection({ product }: { product: IProduct }) {
   const { addToCart } = useCart();
@@ -273,8 +274,26 @@ export default function DetailSection({ product }: { product: IProduct }) {
               )}
             </div>
           </div>
+          
         </div>
+        
+    
       </div>
+      
+<ShopInfoCard
+  name="Pawx Store"
+  onlineText="Online 1 Giờ Trước"
+  stats={{
+    reviews: 162,
+    responseRate: 96,
+    joinedText: "7 năm trước",
+    products: 33,
+    responseTimeText: "trong vài giờ",
+    followers: 955,
+  }}
+  onChat={() => console.log("Chat ngay")}
+  onViewShop={() => console.log("Xem shop")}
+/>
       {showAddPopup && (
         <AddToCartPopup
           image={product.images?.[0]}

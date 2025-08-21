@@ -55,7 +55,7 @@
 
 .page-product-top {
     display: flex;
-    margin: 0 0 60px;
+
     justify-content: space-between;
      align-items: flex-start;
 }
@@ -177,7 +177,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .product-price-box {
@@ -614,3 +614,88 @@ line-height: 0;
 }
 }
 
+
+/* ==== Wrapper ==== */
+.shopHero{
+  display:flex;
+  align-items:center;
+  gap:32px;
+  padding:18px 12px;
+  background:#fff;
+  border:1px solid #ebeef2;
+  border-radius:5px;
+}
+
+/* ==== Left: avatar + name + buttons ==== */
+.shopLeft{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:300px;
+}
+
+.shopAvatar{
+
+  width:88px; height:88px;
+  border-radius:50%;
+  object-fit:cover;
+  border:1px solid #eee;
+  background:#f2f3f5;
+}
+
+.shopMeta{ display:grid; grid-auto-rows:min-content; row-gap:6px; }
+.shopName{ font-size:20px; font-weight:700; color:#222; line-height:1.15; }
+.shopOnline{ font-size:14px; color:#9097a3; }
+
+/* Buttons gọn – cùng chiều cao */
+.shopActions{ display:flex; gap:12px; margin-top:4px; }
+.shopActions button{
+  height:36px; padding:0 14px;
+  border-radius:8px; font-weight:600; cursor:pointer;
+  display:inline-flex; align-items:center; gap:8px;
+  line-height:1; white-space:nowrap;
+}
+
+/* Chat: viền cam, chữ cam, icon vuông cam */
+.shopChatBtn{
+  border:1px solid #ee4d2d; background:#fff; color:#ee4d2d;
+}
+.shopChatBtn:hover{ background:#fff6f4; }
+.shopChatBtn::before{
+  width:14px; height:16px;
+  display:inline-block; border-radius:3px;
+  background:#ee4d2d;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.55);
+}
+
+.shopViewBtn{
+  border:1px solid #ff0000; background:#fff; color:#ee4d2d;
+}
+.shopViewBtn:hover{ background:#f7f8fa; }
+
+/* ==== Right: 3 cột x 2 hàng + vạch dọc ==== */
+.shopRight{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  row-gap:18px; column-gap:56px;
+  width:100%;
+  border-left:1px solid #eceff3;
+  padding-left:32px; margin-left:4px;
+}
+
+.shopCol{ display:flex; align-items:baseline; gap:14px; }
+.shopLabel{ color:#9097a3; font-size:16px; }
+.shopValue{ color:#cd4433; font-weight:700; font-size:16px; }
+
+/* ==== Responsive ==== */
+@media (max-width:1024px){
+  .shopRight{ column-gap:32px; grid-template-columns:repeat(3, minmax(140px,1fr)); }
+}
+@media (max-width:900px){
+  .shopHero{ flex-direction:column; align-items:stretch; }
+  .shopRight{ border-left:none; padding-left:0; margin-left:0; grid-template-columns:repeat(2, minmax(160px,1fr)); }
+}
+@media (max-width:520px){
+  .shopLeft{ min-width:unset; }
+  .shopRight{ grid-template-columns:1fr; }
+}

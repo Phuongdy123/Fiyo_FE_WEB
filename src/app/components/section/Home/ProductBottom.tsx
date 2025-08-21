@@ -28,7 +28,7 @@ export default function ProductBottomSection() {
       let totalPagesFromApi = 1;
 
       while (tempList.length < limit) {
-        const res = await fetch(`http://localhost:3000/api/products/pro/?page=${currentPageFetch}&limit=${limit}`);
+        const res = await fetch(`http://localhost:3000/api/products/pro?page=${currentPageFetch}&limit=${limit}`);
         const data = await res.json();
 
         // Nếu API trả object { data, totalPages, ... }

@@ -5,3 +5,10 @@ export interface IFilter {
   maxPrice: number | null;
   sort: "price_asc" | "price_desc" | "newest"; // ✅ thêm field sort
 }
+export const defaultFilters: IFilter = {
+  sort: "newest",
+  size: null,
+  color: null,
+  minPrice: 99000,
+  maxPrice: 399000,
+};
