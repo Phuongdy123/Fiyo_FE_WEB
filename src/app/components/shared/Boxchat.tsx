@@ -241,7 +241,6 @@ export default function BoxChatComponent() {
     chatList.scrollTop = chatList.scrollHeight;
   };
 
-  /* ========== useEffect #1: mở/đóng widget + auto-height input ========== */
   useEffect(() => {
     const wrapper0 = wrapperState0Ref.current;
     const wrapper1 = wrapperState1Ref.current;
@@ -295,7 +294,6 @@ export default function BoxChatComponent() {
     }
   }, []);
 
-  /* ========== useEffect #2: event delegation + gửi chat ========== */
   useEffect(() => {
     const input = inputRef.current!;
     const sendBtn = sendBtnRef.current!;
