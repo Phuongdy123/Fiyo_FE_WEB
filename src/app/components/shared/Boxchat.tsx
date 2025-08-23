@@ -21,6 +21,7 @@ type ProductCard = {
   actions?: CardAction[];
 
   variants?: any[];
+  shop_id?:string;
 };
 
 type BotResponse = {
@@ -41,6 +42,7 @@ const toICart = (p: any): ICart => ({
   name: p.name || "",
   price: Number(p.price || 0),
   image: p.image || "",
+  shop_id: p.shop_id || p.shopId || "",
 
   variant_id: p.variant_id, 
   variant: p.variant || p.color || "",
@@ -77,9 +79,93 @@ const chatApi = {
   },
 };
 
-/* =========================
-   Component
-========================= */
+const shopIdCache = new Map<string, string>();
+
+async function fetchJsonSafe(url: string) {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Cố gắng tìm shop_id từ nhiều cấu trúc payload phổ biến:
+ * - { shop_id } hoặc { shopId }
+ * - { shop: {_id} } hoặc { shop_id: {_id} }
+ * - { product: {...} } bọc 1 lớp
+ */
+function extractShopId(anyData: any): string {
+  if (!anyData) return "";
+  const pick = (obj: any): string => {
+    if (!obj || typeof obj !== "object") return "";
+    return (
+      obj.shop_id ||
+      obj.shopId ||
+      obj?.shop?._id ||
+      obj?.shop_id?._id ||
+      obj?.owner_id ||
+      obj?.user_id || // dự án của bạn nhiều nơi gắn shop = user_id
+      ""
+    );
+  };
+
+  // trực tiếp
+  let id = pick(anyData);
+  if (id) return String(id);
+
+  // phổ biến: { product: {...} }
+  if (anyData.product) {
+    id = pick(anyData.product);
+    if (id) return String(id);
+  }
+
+  // phổ biến: { data: {...} }
+  if (anyData.data) {
+    id = pick(anyData.data);
+    if (id) return String(id);
+  }
+
+  // một số API trả mảng
+  if (Array.isArray(anyData)) {
+    for (const x of anyData) {
+      id = pick(x);
+      if (id) return String(id);
+    }
+  }
+
+  return "";
+}
+
+async function getShopIdByProductId(productId: string, domShopId?: string): Promise<string> {
+  if (domShopId) return domShopId;
+  if (shopIdCache.has(productId)) return shopIdCache.get(productId)!;
+
+  const base = (API_BASE || "").replace(/\/$/, "");
+
+  // Thử nhiều endpoint phổ biến của bạn (tuỳ backend, chọn cái nào tồn tại)
+  const candidates = [
+    `${base}/api/products/${productId}`,
+    `${base}/api/products/detail/${productId}`,
+    `${base}/api/product/${productId}`,
+    `${base}/api/product/detail/${productId}`,
+  ];
+
+  for (const url of candidates) {
+    const data = await fetchJsonSafe(url);
+    const sid = extractShopId(data);
+    if (sid) {
+      shopIdCache.set(productId, sid);
+      return sid;
+    }
+  }
+
+  // Không tìm được
+  return "";
+}
+
 export default function BoxChatComponent() {
   const { addToCart } = useCart();
 
@@ -197,8 +283,10 @@ export default function BoxChatComponent() {
       </div>`
           : "";
 
-        return `
-      <div class="fiyo-product-card">
+      return `
+  <div class="fiyo-product-card"
+       data-product-id="${id}"
+      data-shop-id="${c.shop_id || ""}">
         <img class="fiyo-product-img" src="${c.image || ""}" alt="${
           c.name || ""
         }" onerror="this.src='https://via.placeholder.com/120?text=No+Image'"/>
@@ -302,7 +390,7 @@ export default function BoxChatComponent() {
     const chatList = chatListRef.current!;
 
     // Event delegation: chọn màu/size + add to cart
-    const onChatListClick = (e: MouseEvent) => {
+    const onChatListClick = async (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target) return;
 
@@ -388,6 +476,7 @@ export default function BoxChatComponent() {
       const url = btn.getAttribute("data-url") || "";
 
       const card = btn.closest(".fiyo-product-card")!;
+      const shopId = (card as HTMLElement).dataset.shopId || ""
       const name =
         (card.querySelector(".fiyo-product-name") as HTMLElement)?.innerText ||
         "";
@@ -450,7 +539,8 @@ try {
 
 if (!variantId) variantId = `${productId}`;         
 if (!sizeId)    sizeId    = `${variantId}`;     
-
+const domShopId = (card as HTMLElement).dataset.shopId || "";
+const shopId = await getShopIdByProductId(productId, domShopId);
 const itemForCart /* ICart */ = {
   id: productId,
   name,
@@ -461,7 +551,8 @@ const itemForCart /* ICart */ = {
   variant: color,
   variant_id: variantId,
   size: sizeLabel,
-  size_id: sizeId
+  size_id: sizeId,
+  shop_id: shopId,
 };
 
 addToCart(itemForCart);
@@ -477,6 +568,8 @@ return;
 
       // Card không có variant -> thêm tối thiểu (variant/size rỗng)
       if (action === "add_to_cart") {
+        const domShopId = (btn.closest(".fiyo-product-card") as HTMLElement)?.dataset.shopId || "";
+        const shopId = await getShopIdByProductId(productId, domShopId);
         const item: ICart = {
           id: productId,
           name,
@@ -487,11 +580,14 @@ return;
           size: "",
           quantity: 1,
           quantity_Product: 0,
+          shop_id: shopId,
         };
         addToCart(item);
         addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
       }
       if (action === "buy_now") {
+        const domShopId = (btn.closest(".fiyo-product-card") as HTMLElement)?.dataset.shopId || "";
+        const shopId = await getShopIdByProductId(productId, domShopId);
         const item: ICart = {
           id: productId,
           name,
@@ -502,6 +598,7 @@ return;
           size: "",
           quantity: 1,
           quantity_Product: 0,
+          shop_id: shopId,
         };
         addToCart(item);
         if (url) window.location.href = url;
@@ -538,6 +635,7 @@ return;
               ...c,
               id: c.id || c._id || "",
               price_text: c.price_text ?? VNPrice(Number(c.price || 0)),
+               shop_id: c.shop_id || "",
             })) || [];
           addProductCardsMessage(data.reply || "Gợi ý sản phẩm:", safeCards);
         } else if (data.type === "add_to_cart") {
@@ -552,7 +650,7 @@ return;
         }
         return; // thành công -> kết thúc
       } catch {
-        // fallback endpoint cũ
+        
       }
 
       try {
