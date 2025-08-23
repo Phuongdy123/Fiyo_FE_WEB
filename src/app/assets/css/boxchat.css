@@ -1678,7 +1678,7 @@ img {
 .variant-block { display:flex; align-items:center; gap:8px; flex-wrap:wrap }
 .variant-label { color:#d1d5db; font-size:12px; min-width:36px }
 .color-list,.size-list { display:flex; gap:6px; flex-wrap:wrap }
-.pill { height:30px; padding:0 10px; border-radius:8px; border:1px solid #2f2f2f; background:#1a1a1a; color:#e5e7eb; font-size:12px; cursor:pointer }
+.pill { height:30px; padding:0 10px; border-radius:8px; border:1px solid #2f2f2f; background:#1a1a1a; color:#e5e7eb; font-size:12px; cursor:pointer; }
 .pill.is-active { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,.2) inset }
 .pill[data-disabled="1"] { opacity:.45; cursor:not-allowed }
 .muted { color:#6b7280; font-size:12px }
