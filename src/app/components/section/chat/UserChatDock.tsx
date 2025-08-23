@@ -303,12 +303,14 @@ export default function UserChatDock({
     <>
       {/* Nút nổi */}
 <button
+  type="button"
   className="chatbox-messenger-btn"
-  aria-label="Mở chat"
+  aria-label={open ? "Đóng chat" : "Mở chat"}
   onClick={() => setOpen(!open)}
   title={open ? "Đóng chat" : "Mở chat"}
-></button>
-
+>
+  <img src="/images/shop.png" alt="" aria-hidden="true" className="chatbox-messenger-btn-img" />
+</button>
       {/* Box chat */}
       <div className={`chatbox-messenger ${open ? "show" : ""}`} role="dialog" aria-modal>
         {/* Sidebar (khi chỉ bấm icon sẽ thấy list từ API) */}
@@ -390,9 +392,12 @@ export default function UserChatDock({
               <button type="button" aria-label="Chèn emoji" onClick={handleEmoji} className="ghost">
                 🙂
               </button>
-              <label htmlFor="fileUpload" className="ghost" title="Đính kèm ảnh">
-                📎
-              </label>
+          <label htmlFor="fileUpload" className="ghost" title="Đính kèm ảnh">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0l-4 4m4-4l4 4" />
+  </svg>
+</label>
+
               <input
                 id="fileUpload"
                 ref={fileInputRef}
@@ -450,6 +455,38 @@ export default function UserChatDock({
         .ghost{background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;}
         .chatbox-messenger-btn-send{background:#fff;color:#444;border:1px solid #444;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;}
         @media (max-width:700px){.chatbox-messenger{right:10px;width:calc(100vw - 20px);height:70vh}.chatbox-messenger-sidebar{display:none}}
+        .chatbox-messenger-btn{
+  position:fixed;
+  bottom:18px;
+  right:95px;
+  z-index:1000;
+
+  width:60px;
+  height:60px;
+  padding:0;
+  border:0;                  /* bỏ viền */
+ background:#fff;    border-radius:50%;
+  overflow:hidden;           /* cắt sát theo bo tròn */
+  cursor:pointer;
+
+  box-shadow:none;           /* không đổ bóng => không “viền” ảo */
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  transition:transform .2s;
+}
+.chatbox-messenger-btn:hover{ transform:translateY(-1px); }
+
+/* ảnh */
+.chatbox-messenger-btn-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:50%;
+  display:block;
+  pointer-events:none;
+}
         
       `}</style>
     </>

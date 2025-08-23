@@ -92,6 +92,7 @@ export default function DetailSection({ product }: { product: IProduct }) {
       quantity: 1,
       variant_id: selectedVariant._id,
       quantity_Product: selectedSizeObject.quantity,
+      shop_id:product.shop_id
     });
     setShowAddPopup(true);
     showToast("Đã thêm vào giỏ hàng!", "success");

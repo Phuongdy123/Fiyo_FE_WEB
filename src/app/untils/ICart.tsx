@@ -9,5 +9,6 @@ export interface ICart  {
   size_id?: string; // nếu cần
   quantity: number;
   quantity_Product:number;
-  shop_id:string;
+ shop_id: string | number;
+  sku?: string; // <-- thêm
 }

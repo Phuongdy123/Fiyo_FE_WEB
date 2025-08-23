@@ -3,7 +3,7 @@
 }
 body {
   background-color: rgb(250, 250, 250);
-  font-family: Montserrat;
+  font-family: Montserrat !important;
   margin: 0 auto;
   width: 100%;
   max-width: 100%;
@@ -804,10 +804,10 @@ img {
 .buy-now-btn {
   position: absolute;
   bottom: 58px;
-  left: 300px;
+  left: 304px;
   background-color: white;
   color: black;
-  padding: 16px 24px;
+  padding: 16px 28px;
   border-radius: 8px;
   font-weight: bold;
   text-decoration: none;
@@ -1074,3 +1074,393 @@ img {
  
 }
 
+.about-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  line-height: 1.6;
+  font-family: Arial, sans-serif;
+}
+
+.about-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.about-subtitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.about-text {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.about-list {
+  list-style: disc;
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+/* src/app/assets/css/careers.css */
+.careers-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.careers-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.careers-intro {
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.careers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .careers-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.job-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+}
+
+.job-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+.job-meta {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+}
+
+.job-apply {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid #111827;
+  color: #111827;
+  transition: transform 0.08s ease, background 0.2s ease;
+}
+
+.job-apply:hover {
+  background: #111827;
+  color: #fff;
+}
+
+.job-apply:active {
+  transform: translateY(1px);
+}
+/* src/app/assets/css/stores.css */
+.stores-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.stores-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.stores-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .stores-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.store-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+}
+
+.store-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+.store-address,
+.store-phone {
+  margin: 0 0 6px 0;
+  color: #333;
+}
+
+.store-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-outline,
+.btn-primary {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: transform 0.08s ease, background 0.2s ease, color 0.2s ease, border 0.2s ease;
+}
+
+.btn-outline {
+  border: 1px solid #111827;
+  color: #111827;
+  background: #fff;
+}
+.btn-outline:hover {
+  background: #111827;
+  color: #fff;
+}
+
+.btn-primary {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.store-phone a {
+  color: inherit;
+  text-decoration: underline;
+}
+/* src/app/assets/css/faq.css */
+.faq-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.faq-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.faq-list {
+  display: grid;
+  gap: 12px;
+}
+
+.faq-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+/* Reset marker & make the whole row clickable */
+.faq-summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+  position: relative;
+  padding-right: 28px;
+  outline: none;
+}
+.faq-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Chevron */
+.faq-summary::after {
+  content: "▾";
+  position: absolute;
+  right: 0;
+  top: 0;
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.faq-item[open] .faq-summary::after {
+  transform: rotate(0deg);
+}
+
+/* Answer */
+.faq-answer {
+  margin: 8px 0 0 0;
+  color: #374151;
+}
+
+/* Footer help line */
+.faq-footer {
+  margin-top: 20px;
+  color: #4b5563;
+}
+.faq-link {
+  color: #111827;
+  text-decoration: underline;
+}
+.faq-link:hover {
+  opacity: 0.85;
+}
+/* src/app/assets/css/customer-policy.css */
+.policy-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: Arial, sans-serif;
+  line-height: 1.65;
+  color: #111827;
+  background: #fff;
+}
+
+.policy-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.policy-updated {
+  color: #6b7280;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.policy-section {
+  margin-top: 24px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.sub-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 10px 0 6px 0;
+}
+
+.policy-text {
+  margin: 0 0 8px 0;
+}
+
+.policy-list {
+  margin: 0 0 10px 18px;
+  padding: 0;
+}
+
+.policy-list li {
+  margin: 4px 0;
+}
+
+.policy-steps {
+  margin: 0 0 10px 18px;
+  padding: 0;
+}
+
+.policy-steps li {
+  margin: 4px 0;
+}
+
+.policy-note {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  color: #334155;
+}
+
+.policy-disclaimer {
+  margin-top: 24px;
+  font-size: 14px;
+  color: #6b7280;
+}
+/* src/app/assets/css/shipping-policy.css */
+.ship-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: Arial, sans-serif;
+  line-height: 1.65;
+  color: #111827;
+  background: #fff;
+}
+
+.ship-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.ship-updated {
+  color: #6b7280;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.ship-section {
+  margin-top: 24px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.ship-text {
+  margin: 0 0 8px 0;
+}
+
+.ship-list {
+  margin: 0 0 10px 18px;
+  padding: 0;
+}
+
+.ship-list li {
+  margin: 4px 0;
+}
+
+a {
+  color: #111827;
+  text-decoration: underline;
+}
+a:hover {
+  opacity: 0.85;
+}

@@ -58,7 +58,7 @@ export default function FooterComponent() {
                     Địa chỉ: Số 688 Đường Quang Trung, Phường La Khê, Hà Đông,
                     Hà Nội
                   </p>
-                  <p>Email: hello@canifa.com</p>
+                  <p>Email: fiyo.com</p>
                 </>
               ),
             },

@@ -169,6 +169,34 @@ async function getShopIdByProductId(
   return "";
 }
 
+/** ========= CHUẨN HOÁ variants: đảm bảo có _id/color/size/quantity ========= */
+function normalizeVariants(raw: any[]): any[] {
+  return (Array.isArray(raw) ? raw : []).map((v: any) => ({
+    _id: v?._id || v?.id || v?.variant_id || v?.variantId || "",
+    color: v?.color || v?.variant || v?.name || v?.title || "",
+    sizes: (Array.isArray(v?.sizes) ? v.sizes : []).map((s: any) => ({
+      _id: s?._id || s?.id || s?.size_id || s?.sizeId || "",
+      size: s?.size || s?.label || s?.name || "",
+      sku: s?.sku || "",
+      quantity: Number(s?.quantity || 0),
+    })),
+  }));
+}
+
+/** ========= Fallback: fetch variants by productId nếu data-variants thiếu _id ========= */
+async function fetchVariantsByProduct(productId: string) {
+  try {
+    const url = `http://localhost:3000/api/variant/products/${productId}`; // chỉnh nếu API base khác
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json(); // IProductVariant[] dạng [{ product_id, variants: [...] }]
+    const variants = Array.isArray(data) ? data[0]?.variants || [] : [];
+    return normalizeVariants(variants);
+  } catch {
+    return [];
+  }
+}
+
 export default function BoxChatComponent() {
   const { addToCart } = useCart();
 
@@ -243,8 +271,9 @@ export default function BoxChatComponent() {
       .map((c) => {
         const id = c.id || c._id || "";
         const priceText = c.price_text ?? VNPrice(Number(c.price || 0));
-        const variants = (c as any).variants || [];
-        const hasVariants = Array.isArray(variants) && variants.length > 0;
+        const rawVariants = (c as any).variants || [];
+        const normVariants = normalizeVariants(rawVariants);
+        const hasVariants = Array.isArray(normVariants) && normVariants.length > 0;
 
         const actions = c.actions?.length
           ? c.actions
@@ -256,18 +285,17 @@ export default function BoxChatComponent() {
         const pickerHTML = hasVariants
           ? `
        <div class="variant-wrap"
-     data-variants='${JSON.stringify(variants).replace(/'/g, "&apos;")}'
+     data-variants='${JSON.stringify(normVariants).replace(/'/g, "&apos;")}'
       data-selected-color="" data-selected-size="">
         <div class="variant-row">
           <div class="variant-block">
             <div class="variant-label">Màu</div>
             <div class="color-list">
-             ${variants
+             ${normVariants
                .map((v: any) => {
-                 const label =
-                   v.color || v.variant || v.name || v.title || "Màu";
+                 const label = v.color || "Màu";
                  const total = (v.sizes || []).reduce(
-                   (t: number, s: any) => t + (s.quantity || 0),
+                   (t: number, s: any) => t + Number(s.quantity || 0),
                    0
                  );
                  return `<button type="button" class="pill color" data-color="${label}" ${
@@ -417,32 +445,52 @@ export default function BoxChatComponent() {
 
         // render size theo màu
         try {
-          const variants = JSON.parse(
-            (wrap.getAttribute("data-variants") || "[]").replace(/&apos;/g, "'")
-          );
-          const v = variants.find((x: any) => {
-            const cand = [x.color, x.variant, x.name, x.title].map((s: any) =>
-              (s || "").toLowerCase().trim()
+          let variants: any[] = [];
+          try {
+            variants = JSON.parse(
+              (wrap.getAttribute("data-variants") || "[]").replace(
+                /&apos;/g,
+                "'"
+              )
             );
-            return cand.includes((color || "").toLowerCase().trim());
-          });
+          } catch {
+            variants = [];
+          }
+
+          // Nếu thiếu _id → gọi API lấy variants chuẩn
+          const needRealIds =
+            !variants.some((v) => v?._id) ||
+            variants.some((v) => (v?.sizes || []).some((s: any) => !s?._id));
+          if (needRealIds) {
+            const productId = (card as HTMLElement).dataset.productId || "";
+            variants = await fetchVariantsByProduct(productId);
+          }
+
+          const v = variants.find(
+            (x: any) =>
+              String(x.color || "").toLowerCase().trim() ===
+              color.toLowerCase().trim()
+          );
           const sizeBox = card.querySelector(".size-list") as HTMLElement;
           if (sizeBox) {
             sizeBox.innerHTML = v?.sizes?.length
               ? v.sizes
                   .map((s: any) => {
-                    const sizeLabel = s.size || s.label || s.name || "";
+                    const sizeLabel = s.size || "";
                     return `<button type="button" class="pill size"
                   data-size="${sizeLabel}"
-                  ${
-                    Number(s.quantity) <= 0 ? 'data-disabled="1"' : ""
-                  }>${sizeLabel}</button>`;
+                  ${Number(s.quantity) <= 0 ? 'data-disabled="1"' : ""}>${sizeLabel}</button>`;
                   })
                   .join("")
               : `<span class="muted">Hết hàng</span>`;
           }
 
           wrap.dataset.selectedSize = "";
+          // cập nhật lại data-variants đã chuẩn sau khi fetch
+          wrap.setAttribute(
+            "data-variants",
+            JSON.stringify(variants).replace(/'/g, "&apos;")
+          );
         } catch {}
         return;
       }
@@ -450,7 +498,6 @@ export default function BoxChatComponent() {
       // Chọn Size
       const sizeBtn = target.closest(".pill.size") as HTMLButtonElement | null;
       if (sizeBtn) {
-        // if (sizeBtn.getAttribute("data-disabled")==="1") return; // tạm comment để test
         const card = sizeBtn.closest(".fiyo-product-card")!;
         const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
         if (!wrap) return;
@@ -488,87 +535,133 @@ export default function BoxChatComponent() {
         "";
       const price = Number((priceText || "").replace(/[^\d]/g, "")) || 0;
 
-      // Nếu có picker -> bắt buộc chọn đủ
-      // Nếu có picker -> bắt buộc chọn đủ
-const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
-if (wrap) {
-  const color = wrap.dataset.selectedColor || "";
-  const sizeLabel = wrap.dataset.selectedSize || "";
-  if (!color || !sizeLabel) {
-    addTextMessage("bot", "Vui lòng chọn <b>màu</b> và <b>size</b> trước khi thêm vào giỏ.", true);
-    return;
-  }
+      // Nếu có picker -> bắt buộc chọn đủ & gửi đúng _id
+      const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
+      if (wrap) {
+        const color = wrap.dataset.selectedColor || "";
+        const sizeLabel = wrap.dataset.selectedSize || "";
+        if (!color || !sizeLabel) {
+          addTextMessage(
+            "bot",
+            "Vui lòng chọn <b>màu</b> và <b>size</b> trước khi thêm vào giỏ.",
+            true
+          );
+          return;
+        }
 
-  let variantId = "";
-  let sizeId = "";
-  let qtyInStock = 0;
+        let variantId = "";
+        let sizeId = "";
+        let qtyInStock = 0;
 
-  try {
-    const variants = JSON.parse((wrap.getAttribute("data-variants") || "[]").replace(/&apos;/g, "'"));
+        try {
+          let variants: any[] = [];
+          try {
+            variants = JSON.parse(
+              (wrap.getAttribute("data-variants") || "[]").replace(
+                /&apos;/g,
+                "'"
+              )
+            );
+          } catch {
+            variants = [];
+          }
 
-    // 1) tìm variant theo tên màu (color/variant/name/title)
-    let v = variants.find((x:any) => {
-      const cand = [x.color, x.variant, x.name, x.title].map((s:any)=> (s||"").toLowerCase().trim());
-      return cand.includes(color.toLowerCase().trim());
-    });
+          // Nếu thiếu _id → fallback fetch
+          const needRealIds =
+            !variants.some((v) => v?._id) ||
+            variants.some((v) => (v?.sizes || []).some((s: any) => !s?._id));
+          if (needRealIds) {
+            variants = await fetchVariantsByProduct(productId);
+            if (!variants.length) {
+              addTextMessage(
+                "bot",
+                "Không tải được biến thể sản phẩm. Vui lòng thử lại.",
+                true
+              );
+              return;
+            }
+            // ghi đè lại data-variants đã chuẩn
+            wrap.setAttribute(
+              "data-variants",
+              JSON.stringify(variants).replace(/'/g, "&apos;")
+            );
+          }
 
-    // 2) tìm size trong variant theo label (không dùng sku)
-    let s = v?.sizes?.find((x:any) => {
-      const label = (x.size || x.label || x.name || "").toLowerCase().trim();
-      return label === sizeLabel.toLowerCase().trim();
-    });
+          // 1) tìm variant theo color đã chuẩn hoá
+          let v = variants.find(
+            (x: any) =>
+              String(x.color || "").toLowerCase().trim() ===
+              color.toLowerCase().trim()
+          );
 
-    // 3) fallback: nếu chưa thấy, quét toàn bộ variants bằng label
-    if (!s) {
-      for (const vv of variants) {
-        const ss = (vv.sizes || []).find((x:any) => {
-          const label = (x.size || x.label || x.name || "").toLowerCase().trim();
-          return label === sizeLabel.toLowerCase().trim();
-        });
-        if (ss) { v = vv; s = ss; break; }
+          // 2) tìm size theo label
+          let s = v?.sizes?.find(
+            (x: any) =>
+              String(x.size || "").toLowerCase().trim() ===
+              sizeLabel.toLowerCase().trim()
+          );
+
+          // 3) fallback: quét toàn bộ variants theo size label (phòng mismatch)
+          if (!s) {
+            for (const vv of variants) {
+              const ss = (vv.sizes || []).find(
+                (x: any) =>
+                  String(x.size || "").toLowerCase().trim() ===
+                  sizeLabel.toLowerCase().trim()
+              );
+              if (ss) {
+                v = vv;
+                s = ss;
+                break;
+              }
+            }
+          }
+
+          variantId = v?._id || "";
+          sizeId = s?._id || "";
+          qtyInStock = Number(s?.quantity || 0);
+        } catch {}
+
+        // BẮT BUỘC có _id thật
+        if (!variantId || !sizeId) {
+          addTextMessage(
+            "bot",
+            "Không tìm thấy <b>variant</b>/<b>size</b> hợp lệ (thiếu _id). Vui lòng chọn lại.",
+            true
+          );
+          return;
+        }
+
+        // Resolve shop_id (DOM → cache/API)
+        const domShopId = (card as HTMLElement).dataset.shopId || "";
+        const resolvedShopId = await getShopIdByProductId(productId, domShopId);
+
+        const itemForCart: ICart = {
+          id: productId,
+          name,
+          image,
+          price,
+          quantity: 1,
+          quantity_Product: qtyInStock,
+          variant: color,
+          variant_id: variantId,
+          size: sizeLabel,
+          size_id: sizeId,
+          shop_id: resolvedShopId,
+        };
+
+        // LOG để debug
+        console.log("[Chat:addToCart] item", itemForCart);
+
+        addToCart(itemForCart);
+        addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
+
+        if (action === "buy_now" && url) {
+          // KHÔNG gắn ?sku=... nữa
+          window.location.href = url;
+        }
+        return;
       }
-    }
-
-    // Lấy id với nhiều phương án fallback
-    variantId = v?._id || v?.id || v?.variant_id || v?.variantId || "";
-    sizeId    = s?._id || s?.id || s?.size_id   || s?.sizeId    || "";
-    qtyInStock = Number(s?.quantity || 0);
-  } catch {
-    // noop
-  }
-
-  // Fallback nếu không có id chuẩn
-  if (!variantId) variantId = `${productId}`;
-  if (!sizeId)    sizeId    = `${variantId}`;
-
-  // Resolve shop_id (DOM → cache/API)
-  const domShopId = (card as HTMLElement).dataset.shopId || "";
-  const resolvedShopId = await getShopIdByProductId(productId, domShopId);
-
-  const itemForCart /* ICart */ = {
-    id: productId,
-    name,
-    image,
-    price,
-    quantity: 1,
-    quantity_Product: qtyInStock,
-    variant: color,
-    variant_id: variantId,
-    size: sizeLabel,
-    size_id: sizeId,
-    shop_id: resolvedShopId,
-  };
-
-  addToCart(itemForCart);
-  addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
-
-  if (action === "buy_now" && url) {
-    // KHÔNG gắn ?sku=... nữa
-    window.location.href = url;
-  }
-  return;
-}
-
 
       // Card không có variant -> thêm tối thiểu (variant/size rỗng)
       if (action === "add_to_cart") {
@@ -588,6 +681,7 @@ if (wrap) {
           quantity_Product: 0,
           shop_id: shopId,
         };
+        console.log("[Chat:addToCart] item-no-variant", item);
         addToCart(item);
         addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
       }
@@ -608,6 +702,7 @@ if (wrap) {
           quantity_Product: 0,
           shop_id: shopId,
         };
+        console.log("[Chat:addToCart] buy-now item-no-variant", item);
         addToCart(item);
         if (url) window.location.href = url;
       }
@@ -659,6 +754,7 @@ if (wrap) {
         return; // thành công -> kết thúc
       } catch {}
 
+      // Fallback endpoint cũ localhost
       try {
         const response = await fetch("http://localhost:3000/api/chat", {
           method: "POST",

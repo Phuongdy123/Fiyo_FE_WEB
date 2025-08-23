@@ -206,16 +206,16 @@ export default function MenuComponent() {
     <div className="menu__submenu-cat-content">
       <ul>
         <li>
-          <Link href="/san-pham-moi">Mới ra mắt</Link>
+          <Link href="/page/product">Mới ra mắt</Link>
         </li>
         <li>
-          <Link href="/hot-items">Đang hot</Link>
+          <Link href="/page/hot">Đang hot</Link>
         </li>
         <li>
-          <Link href="/duoi-199k">Giá dưới 199K</Link>
+          <Link href="/page/199k">Giá dưới 199K</Link>
         </li>
         <li>
-          <Link href="/best-seller">Bán chạy nhất</Link>
+          <Link href="/page/best-selling">Bán chạy nhất</Link>
         </li>
       </ul>
     </div>

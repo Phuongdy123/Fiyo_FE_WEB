@@ -6,7 +6,6 @@ import { useEffect, use } from "react";
 import { useState } from "react";
 import LogoutComponent from "@/app/components/shared/Logout";
 import AccountSiteBar from "@/app/components/shared/AccountSiteBar";
-import { getOrderDetailByUserId } from "@/app/services/Order/SOrder";
 import SectionReviewForm from "@/app/components/section/Reviews/ReviewForm";
 import { getColorStyle } from "@/app/components/shared/ColorBox";
 import Link from "next/link";
@@ -28,22 +27,66 @@ export default function AccountPage({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const { showToast } = useToast();
 
+  // ====== FETCH DETAIL: dùng API mới và chuẩn hoá dữ liệu về shape cũ ======
   useEffect(() => {
     async function fetchOrderDetail() {
+      if (!id) return;
       try {
-        const res = await getOrderDetailByUserId(
-          `http://localhost:3000/api/orderDetail/${id}`
+        setOrderDetail(null);
+
+        const res = await fetch(
+          `http://localhost:3000/api/orderDetail/order-shops/${id}/details`,
+          { cache: "no-store" }
         );
-        setOrderDetail(res);
-        console.log("objectsss", res);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+
+        // Map JSON mới -> shape cũ mà UI đang dùng
+        // - order_id: dùng _id của đơn con (order_shop) để hiển thị mã đang xem
+        // - order: ưu tiên status_history của đơn con; fallback đơn cha
+        // - user.address: đưa shipping_address vào để UI lấy user.address.address
+        // - products: trải phẳng từ items[].product + quantity
+        const normalized = {
+          order_id: data?.order_shop?._id ?? id,
+          order: {
+            ...data?.order_parent,
+            status_history:
+              Array.isArray(data?.order_shop?.status_history) &&
+              data.order_shop.status_history.length > 0
+                ? data.order_shop.status_history
+                : data?.order_parent?.status_history ?? [],
+            createdAt: data?.order_parent?.createdAt,
+            total_price: data?.order_parent?.total_price ?? 0,
+            payment_method: data?.order_parent?.payment_method ?? "cod",
+          },
+          user: {
+            ...(data?.user ?? {}),
+            address: data?.shipping_address ?? null,
+          },
+          products: (Array.isArray(data?.items) ? data.items : []).map((it: any) => {
+            const p = it?.product ?? {};
+            return {
+              _id: p?.product_id ?? it?._id,
+              product_id: p?.product_id,
+              name: p?.name ?? "",
+              images: Array.isArray(p?.images) ? p.images : [],
+              price: p?.price ?? 0,
+              color: p?.variant?.color ?? "",
+              size: p?.size?.size ?? "",
+              sku: p?.size?.sku ?? "",
+              quantity: it?.quantity ?? 1,
+            };
+          }),
+        };
+
+        setOrderDetail(normalized);
       } catch (error) {
         console.error("Failed to fetch order detail:", error);
       }
     }
 
-    if (id) {
-      fetchOrderDetail();
-    }
+    fetchOrderDetail();
   }, [id]);
 
   const formatDate = (dateInput: Date | string | null | undefined) => {
@@ -104,7 +147,7 @@ export default function AccountPage({
 
       if (res.status === 201) {
         showToast("Đánh giá thành công", "success");
-      } else if (res.status === 400 && data.message.includes("đã đánh giá")) {
+      } else if (res.status === 400 && data.message?.includes("đã đánh giá")) {
         showToast("Bạn đã đánh giá sản phẩm này rồi", "error");
       } else {
         showToast(`Thất bại: ${data.message || "Lỗi không xác định"}`, "error");
@@ -208,13 +251,13 @@ export default function AccountPage({
                             <li>
                               <label>Địa chỉ nhận hàng</label>
                               <div className="value">
-                                {orderDetail?.user.name}
+                                {orderDetail?.user?.name}
                               </div>
                               <div className="value">
-                                {orderDetail?.user.phone}
+                                {orderDetail?.user?.phone}
                               </div>
                               <div className="value">
-                                {orderDetail?.user.address.address}
+                                {orderDetail?.user?.address?.address}
                               </div>
                             </li>
                             <li className="payment">
@@ -227,8 +270,7 @@ export default function AccountPage({
                               <label>Phương thức thanh toán</label>
                               <div className="value">
                                 <span>
-                                  Thanh toán (
-                                  {orderDetail?.order.payment_method})
+                                  Thanh toán ({orderDetail?.order?.payment_method})
                                 </span>
                               </div>
                             </li>
@@ -246,8 +288,7 @@ export default function AccountPage({
                             </div>
                             <div className="order__tracking-content">
                               <div className="order__tracking-items">
-                                {orderDetail?.order?.status_history?.length >
-                                0 ? (
+                                {orderDetail?.order?.status_history?.length > 0 ? (
                                   <>
                                     {[...orderDetail.order.status_history]
                                       .sort((a: any, b: any) => {
@@ -260,9 +301,7 @@ export default function AccountPage({
                                       })
                                       .map((item: any, index: number) => (
                                         <div
-                                          className={`order__tracking-item ${
-                                            index === 0 ? "active" : ""
-                                          }`}
+                                          className={`order__tracking-item ${index === 0 ? "active" : ""}`}
                                           key={item._id}
                                         >
                                           <div className="order__tracking-date">
@@ -274,9 +313,7 @@ export default function AccountPage({
                                           <div className="order__tracking-icon" />
                                           <div className="order__tracking-detail">
                                             <strong className="order__tracking-status">
-                                              {translateStatus(
-                                                item.status || ""
-                                              )}
+                                              {translateStatus(item.status || "")}
                                             </strong>
                                             <div>{item.note}</div>
                                           </div>
@@ -288,17 +325,13 @@ export default function AccountPage({
                                     <div className="order__tracking-date">
                                       <div className="date" />
                                       <span className="time">
-                                        {formatDate(
-                                          orderDetail?.order?.createdAt
-                                        )}
+                                        {formatDate(orderDetail?.order?.createdAt)}
                                       </span>
                                     </div>
                                     <div className="order__tracking-icon" />
                                     <div className="order__tracking-detail">
                                       <strong className="order__tracking-status">
-                                        {translateStatus(
-                                          orderDetail?.order?.status_order || ""
-                                        )}
+                                        {translateStatus(orderDetail?.order?.status_order || "")}
                                       </strong>
                                       <div>Chờ xác nhận đơn hàng</div>
                                     </div>
@@ -308,9 +341,7 @@ export default function AccountPage({
                                   <div className="order__tracking-date">
                                     <div className="date" />
                                     <span className="time">
-                                      {formatDate(
-                                        orderDetail?.order?.createdAt
-                                      )}
+                                      {formatDate(orderDetail?.order?.createdAt)}
                                     </span>
                                   </div>
                                   <div className="order__tracking-icon" />
@@ -382,7 +413,9 @@ export default function AccountPage({
                         <div className="text">
                           <label>Đang xử lý</label>
                           <p className="des">Đơn hàng đang được xử lý</p>
-                          <p className="date">16/07/2025 - 18:05</p>
+                          <p className="date">
+                            {formatDate(orderDetail?.order?.createdAt)}
+                          </p>
                           <button className="btn btn-primary">
                             Theo dõi đơn hàng
                           </button>
@@ -399,7 +432,7 @@ export default function AccountPage({
                       <div className="order-details-info">
                         <div className="item-row item-row--order">
                           <div className="label">
-                            Mã đơn hàng: CNF1000104131
+                            Mã đơn hàng: {orderDetail?.order_id}
                           </div>
                           <div className="action-copy">
                             <span>Copy</span>
@@ -407,7 +440,9 @@ export default function AccountPage({
                         </div>
                         <div className="item-row">
                           <div className="label">Ngày mua hàng:</div>
-                          <div className="value">16/07/2025 - 18:05</div>
+                          <div className="value">
+                            {formatDate(orderDetail?.order?.createdAt)}
+                          </div>
                         </div>
                       </div>
                       <div className="order-details-box order-details-bystore">
@@ -416,10 +451,10 @@ export default function AccountPage({
                           <h2 className="title">Địa chỉ nhận hàng</h2>
                         </div>
                         <div className="order-details-box-content">
-                          <div className="title">Phương Nguyễn Duy</div>
-                          <div className="phone">0865181657</div>
+                          <div className="title">{orderDetail?.user?.name}</div>
+                          <div className="phone">{orderDetail?.user?.phone}</div>
                           <div className="address">
-                            aapas 14, Xã Hương Mạc, Thị xã Từ Sơn, Bắc Ninh
+                            {orderDetail?.user?.address?.address}
                           </div>
                         </div>
                       </div>
@@ -446,13 +481,17 @@ export default function AccountPage({
                               alt="COD"
                             />
                           </div>
-                          <div>Thanh toán khi nhận hàng (COD)</div>
+                          <div>
+                            {orderDetail?.order?.payment_method === "cod"
+                              ? "Thanh toán khi nhận hàng (COD)"
+                              : `Thanh toán (${orderDetail?.order?.payment_method})`}
+                          </div>
                         </div>
                       </div>
                       <div className="order-details__products">
                         <h2 className="order-details__products-title">
                           Sản phẩm{" "}
-                          <span>({orderDetail?.products?.length})</span>
+                          <span>({orderDetail?.products?.length || 0})</span>
                         </h2>
                         <div className="order-details__products-items">
                           {orderDetail?.products?.map((item: any) => (
@@ -473,12 +512,12 @@ export default function AccountPage({
                               <div className="order-details__product-detail">
                                 <div className="order-details__product-info">
                                   <div className="order-details__product-name">
-                                    <a href="/quan-sooc-jeans-nu-6bs25s006">
+                                    <a href="#">
                                       {item.name}
                                     </a>
                                   </div>
                                   <div className="order-details__product-sku">
-                                    6BS25S006-SJ932-28
+                                    {item.sku || "—"}
                                   </div>
                                   <div className="order-details__product-options">
                                     <div className="order-details__product-option">
@@ -499,7 +538,7 @@ export default function AccountPage({
                                       </span>
                                     </div>
                                     <div className="order-details__product-option">
-                                      Size: {item.size || "L"}
+                                      Size: {item.size || "—"}
                                     </div>
                                     <div className="order-details__product-qty order-details__product-qty--mb">
                                       {item.quantity}
@@ -532,9 +571,7 @@ export default function AccountPage({
                                 </th>
                                 <td>
                                   <div className="price">
-                                    {formatPrice(
-                                      orderDetail?.order?.total_price
-                                    )}
+                                    {formatPrice(orderDetail?.order?.total_price)}
                                   </div>
                                 </td>
                               </tr>
@@ -559,13 +596,9 @@ export default function AccountPage({
                                 </th>
                                 <td>
                                   <div className="price">
-                                    {formatPrice(
-                                      orderDetail?.order?.total_price
-                                    )}
+                                    {formatPrice(orderDetail?.order?.total_price)}
                                   </div>
-                                  <div className="save">
-                                    {/* Tiết kiệm 224.700&nbsp;₫ */}
-                                  </div>
+                                  <div className="save" />
                                 </td>
                               </tr>
                             </tfoot>
@@ -630,7 +663,10 @@ export default function AccountPage({
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onSuccess={() => {
-          // reload lại dữ liệu đơn hàng
+          // reload lại dữ liệu đơn hàng sau khi hủy thành công
+          // gọi lại API bằng cách đơn giản: force re-run effect
+          // (có thể đặt 1 state counter và tăng lên để trigger)
+          location.reload(); // tối giản theo yêu cầu
         }}
       />
       <SectionReviewForm

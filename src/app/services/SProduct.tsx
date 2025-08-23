@@ -100,6 +100,53 @@ export const getAllProductSaleCount = async (url: string): Promise<IProduct[]> =
     return products;
   };
 
+  export const getAllProBestSelling = async (url: string): Promise<IProduct[]> => {
+  // Tự gắn sort=-sale_count nếu URL chưa có sort
+  const finalUrl = /[?&]sort=/.test(url)
+    ? url
+    : url.includes("?")
+    ? `${url}&sort=-sale_count`
+    : `${url}?sort=-sale_count`;
+
+  const res = await fetch(finalUrl);
+  const data = await res.json();
+
+  // Chuẩn hoá các kiểu response phổ biến
+  const list: any[] = Array.isArray(data)
+    ? (data.length > 1 && (data[0] as any)?.status === true ? data.slice(1) : data)
+    : Array.isArray((data as any)?.products)
+    ? (data as any).products
+    : Array.isArray((data as any)?.result)
+    ? (data as any).result
+    : [];
+
+  const products: IProduct[] = list.map((product: any) => {
+    const category = product.category_id || { _id: "", name: "" };
+    return {
+      _id: product._id,
+      name: product.name,
+      images: product.images,
+      price: product.price,
+      sale: product.sale,
+      material: product.material,
+      shop_id: product.shop_id,
+      description: product.description,
+      sale_count: product.sale_count,
+      category_id: {
+        _id: category._id,
+        name: category.name,
+      },
+      isHidden: product.isHidden,
+      create_at: product.create_at,
+    } as IProduct;
+  });
+
+  // Đảm bảo sort giảm dần theo sale_count ở client
+  products.sort((a, b) => (b.sale_count ?? 0) - (a.sale_count ?? 0));
+
+  return products;
+};
+
     export const getProductsByCategoryParent = async (parentCategoryId: string): Promise<IProduct[]> => {
       
       try {

@@ -4,10 +4,10 @@ import "@/app/assets/css/cancel.css";
 import { useToast } from "@/app/context/CToast";
 
 interface CancelOrderModalProps {
-  orderId: string;
+  orderId: string;        // _id của OrderShop (đơn con)
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: () => void; // callback để reload lại dữ liệu nếu cần
 }
 
 export default function CancelOrderModal({
@@ -18,6 +18,7 @@ export default function CancelOrderModal({
 }: CancelOrderModalProps) {
   const [reason, setReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
+  const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
   const reasons = [
@@ -29,22 +30,42 @@ export default function CancelOrderModal({
   ];
 
   const handleCancel = async () => {
+    const note = reason === "Khác" ? otherReason.trim() : reason;
+
+    if (!note) {
+      showToast("Vui lòng chọn hoặc nhập lý do hủy", "error");
+      return;
+    }
+    if (!orderId) {
+      showToast("Thiếu mã đơn để hủy", "error");
+      return;
+    }
+
     try {
-      const res = await fetch(`http://localhost:3000/api/orders/${orderId}/cancel`, {
+      setLoading(true);
+
+      // Gọi API hủy đơn con
+      const res = await fetch(`http://localhost:3000/api/orderShop/${orderId}/cancel`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cancel_reason: reason === "Khác" ? otherReason : reason,
-        }),
+        body: JSON.stringify({ note }),
       });
 
-      if (!res.ok) throw new Error("Hủy đơn thất bại");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.status === false) {
+        throw new Error(data?.message || "Hủy đơn thất bại");
+      }
 
-      showToast("Hủy đơn thành công", "success");
-      if (onSuccess) onSuccess();
+      // ✅ Toast thành công
+      showToast("Đơn hàng đã được hủy thành công", "success");
+
+      // Cho phép trang cha refresh lại dữ liệu
+      onSuccess?.();
       onClose();
-    } catch (error) {
-      showToast("Hủy đơn thất bại", "error");
+    } catch (error: any) {
+      showToast(error?.message || "Hủy đơn thất bại", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,6 +88,7 @@ export default function CancelOrderModal({
                 value={r}
                 checked={reason === r}
                 onChange={() => setReason(r)}
+                disabled={loading}
               />
               {r}
             </label>
@@ -78,16 +100,17 @@ export default function CancelOrderModal({
               placeholder="Nhập lý do khác..."
               value={otherReason}
               onChange={(e) => setOtherReason(e.target.value)}
+              disabled={loading}
             />
           )}
         </div>
 
         <div className="cancel-footer">
-          <button onClick={onClose} className="btn btn-secondary">
+          <button onClick={onClose} className="btn btn-secondary" disabled={loading}>
             Đóng
           </button>
-          <button onClick={handleCancel} className="btn btn-danger">
-            Xác nhận hủy
+          <button onClick={handleCancel} className="btn btn-danger" disabled={loading}>
+            {loading ? "Đang hủy..." : "Xác nhận hủy"}
           </button>
         </div>
       </div>
