@@ -22,7 +22,7 @@ export interface ISize {
   _id: string;
   size: string;
   quantity: number;
-  sku: string;
+  sku?: string;
 }
 
 export interface IVariant {
