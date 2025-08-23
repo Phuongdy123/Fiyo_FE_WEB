@@ -1,8 +1,7 @@
-
 "use client";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import "@/app/assets/css/shop.css";
-import '@/app/assets/css/category.css';
+import "@/app/assets/css/category.css";
 
 import { IShop } from "@/app/untils/IShop";
 import { IFilter, defaultFilters } from "@/app/untils/IFilter";
@@ -19,6 +18,11 @@ interface ICategory {
 type Rating = number | { average: number; count: number };
 type Props = { userId: string };
 
+// ====== CONFIG CƠ BẢN ======
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+// Đổi thành `${API_BASE}/api/shop` nếu backend mount là /api/shop
+const SHOPS_API = `${API_BASE}/api/shop`;
+
 export default function ShopInfor({ userId }: Props) {
   // ─── State ────────────────────────────────
   const [shop, setShop] = useState<IShop | null>(null);
@@ -28,7 +32,12 @@ export default function ShopInfor({ userId }: Props) {
   const [loadingCate, setLoadingCate] = useState(false);
   const [filters, setFilters] = useState<IFilter>(defaultFilters);
 
-  // ─── Hooks cố định (luôn đặt trước return) ─────────────
+  // ===== FOLLOW STATE (cơ bản) =====
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [following, setFollowing] = useState<boolean>(false);
+  const [followBusy, setFollowBusy] = useState<boolean>(false);
+
+  // ─── Hooks cố định ─────────────
   const safeCategories = useMemo(
     () => (Array.isArray(categories) ? categories : []),
     [categories]
@@ -46,21 +55,44 @@ export default function ShopInfor({ userId }: Props) {
     (async () => {
       try {
         setError("");
-        const res = await fetch(`http://localhost:3000/api/shop/user/${userId}`, {
+        // Giữ nguyên call cũ của bạn:
+        const res = await fetch(`${API_BASE}/api/shop/user/${userId}`, {
           cache: "no-store",
           signal: ac.signal,
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Không tải được shop");
-        setShop(data.shop);
+
+        const s = data.shop;
+        setShop(s);
+
+        // ====== INIT FOLLOW COUNT (có thể từ followers_count virtual hoặc mảng followers) ======
+        const initCount = Array.isArray(s?.followers)
+          ? s.followers.length
+          : (s as any).followers_count ?? 0;
+        setFollowersCount(Number(initCount) || 0);
+
+        // ====== CHECK ĐANG FOLLOW? ======
+        if (s?._id) {
+          try {
+            const chk = await fetch(`${SHOPS_API}/${s._id}/following/${userId}`, {
+              cache: "no-store",
+              signal: ac.signal,
+            });
+            const chkData = await chk.json();
+            if (chk.ok) setFollowing(!!chkData.following);
+          } catch (e) {
+            // im lặng: không fail UI
+          }
+        }
 
         // Fetch categories theo shopId
-        if (data.shop?._id) {
+        if (s?._id) {
           setLoadingCate(true);
           setCateError("");
           try {
             const cateRes = await fetch(
-              `http://localhost:3000/api/category/shop/${data.shop._id}`,
+              `${API_BASE}/api/category/shop/${s._id}`,
               { cache: "no-store", signal: ac.signal }
             );
             const cateData = await cateRes.json();
@@ -82,7 +114,46 @@ export default function ShopInfor({ userId }: Props) {
     return () => ac.abort();
   }, [userId]);
 
-  // ─── Render Return (sau khi định nghĩa hook) ────────────
+  // ====== HANDLER: TOGGLE FOLLOW (CƠ BẢN, OPTIMISTIC UI NHẸ) ======
+  const onToggleFollow = useCallback(async () => {
+    if (!shop?._id || !userId || followBusy) return;
+    setFollowBusy(true);
+
+    // Optimistic: đổi ngay
+    setFollowing((prev) => !prev);
+    setFollowersCount((c) => (following ? Math.max(0, c - 1) : c + 1));
+
+    try {
+      const res = await fetch(`${SHOPS_API}/${shop._id}/follow/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Rollback nếu lỗi
+        setFollowing((prev) => !prev);
+        setFollowersCount((c) => (following ? c + 1 : Math.max(0, c - 1)));
+        throw new Error(data.message || "Lỗi follow");
+      }
+
+      // Nếu backend trả về followers_count mới thì sync
+      if (typeof data.followers_count === "number") {
+        setFollowersCount(data.followers_count);
+      }
+      // Nếu backend trả về following hiện tại thì sync
+      if (typeof data.following === "boolean") {
+        setFollowing(data.following);
+      }
+    } catch (e) {
+      // có thể toast sau
+    } finally {
+      setFollowBusy(false);
+    }
+  }, [shop?._id, userId, followBusy, following]);
+
+  // ─── Render ────────────
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   if (!shop) return <p>Đang tải thông tin shop...</p>;
 
@@ -92,9 +163,10 @@ export default function ShopInfor({ userId }: Props) {
       ? `${ratingRaw.average} ★ (${ratingRaw.count} đánh giá)`
       : ratingRaw ?? 0;
 
-  const followersCount = Array.isArray((shop as any).followers)
-    ? (shop as any).followers.length
-    : (shop as any).followers_count ?? 0;
+  const joinedText =
+    (shop as any).created_at
+      ? new Date((shop as any).created_at).toLocaleDateString("vi-VN")
+      : "Không rõ";
 
   return (
     <div className="main-content">
@@ -158,11 +230,7 @@ export default function ShopInfor({ userId }: Props) {
               <li className="hide-sm">
                 <i className="fas fa-calendar-alt" />
                 <span className="label">Tham gia</span>
-                <strong>
-                  {(shop as any).created_at
-                    ? new Date((shop as any).created_at).toLocaleDateString("vi-VN")
-                    : "Không rõ"}
-                </strong>
+                <strong>{joinedText}</strong>
               </li>
               <li className="truncate hide-sm">
                 <i className="fas fa-envelope" />
@@ -173,8 +241,14 @@ export default function ShopInfor({ userId }: Props) {
           </div>
 
           <div className="shop-hero__actions">
-            <button className="btn-outline">
-              <i className="far fa-user" /> Theo Dõi
+            <button
+              className="btn-outline"
+              onClick={onToggleFollow}
+              disabled={followBusy || !shop?._id}
+              title={following ? "Bỏ theo dõi" : "Theo dõi"}
+            >
+              <i className="far fa-user" />{" "}
+              {followBusy ? "Đang xử lý…" : following ? "Bỏ theo dõi" : "Theo dõi"}
             </button>
             <button className="btn-outline">
               <i className="far fa-comments" /> Chat

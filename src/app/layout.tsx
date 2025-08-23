@@ -13,6 +13,7 @@ import { MinicartProvider } from "./context/MinicartContext";
 import BackToTop from "./components/shared/BacktoTop";
 import ChatMount from "./components/section/chat/ChatMount";
 import { UserChatProvider } from "./components/section/chat/UserChatProvider";
+import BoxChatComponent from './components/shared/Boxchat';
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
                       {/* Dock chat chỉ *dùng* context, KHÔNG tạo Provider ở đây */}
                       <ChatMount />
-
+                      <BoxChatComponent></BoxChatComponent>
                       <BackToTop />
                     </ToastProvider>
                     <FooterSection />

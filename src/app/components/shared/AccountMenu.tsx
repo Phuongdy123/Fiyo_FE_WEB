@@ -63,17 +63,17 @@ export default function AccountMenu() {
 
               {user.role === 2 && (
                 <>
-                  <a onClick={() => go("/shop/me")} className="accm__item">
+                  <a onClick={() => go("/page/shop/shop-infor")} className="accm__item">
                     <i className="fas fa-store"></i> Cửa hàng của bạn
                   </a>
-                  <a onClick={() => go("/seller/dashboard")} className="accm__item">
+                  <a onClick={() => go("#")} className="accm__item">
                     <i className="fas fa-sitemap"></i> Quản trị Shop
                   </a>
                 </>
               )}
 
               {user.role === 0 && (
-                <a onClick={() => go("/admin")} className="accm__item">
+                <a onClick={() => go("#")} className="accm__item">
                   <i className="fas fa-shield-alt"></i> Quản trị Admin
                 </a>
               )}

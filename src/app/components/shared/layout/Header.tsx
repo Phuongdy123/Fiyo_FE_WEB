@@ -9,12 +9,22 @@ import { useMinicart } from "@/app/context/MinicartContext";
 import Link from "next/link"; // Thêm import Link
 import AccountMenu from "../AccountMenu";
 
+
 export default function Header() {
+  
+  
   const { toggle } = useMinicart();
   const { cart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname(); // Lấy đường dẫn hiện tại
+  const handleGoShop = () => {
+    if (user?.role === 2) {
+      router.push("/page/shop/shop-infor");
+    } else {
+      router.push("/page/shop/register");
+    }
+  };
 
   const handleClick = () => {
     if (user) {
@@ -176,13 +186,15 @@ export default function Header() {
               </div>
             </div>
             <div className="header__group-icon">
-              <Link
-                href="#"
-                className={`header__icon-store header__icon`}
-                aria-label="Hệ thống cửa hàng"
+                 <button
+                type="button"
+                className="header__icon-store header__icon"
+                aria-label="Khu vực shop"
+                onClick={handleGoShop}
+                style={{ background: "none", border: "none", cursor: "pointer" }}
               >
                 <span>Cửa hàng</span>
-              </Link>
+              </button>
               <div className="header__icon-account">
   <AccountMenu />  {/* Popup tài khoản */}
 </div>

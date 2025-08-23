@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import "@/app/assets/css/register.css";
 import { useToast } from "@/app/context/CToast";
-import { useAuth } from "@/app/context/CAuth"; // 🟢 lấy user từ context
+import { useAuth } from "@/app/context/CAuth"; // 🟢 lấy user và loginUser từ context
 
 export default function SellerRegisterForm() {
   const { showToast } = useToast();
-  const { user } = useAuth(); // 🟢 lấy user login để có user._id
+  const { user, loginUser } = useAuth(); // 🟢 lấy user và loginUser
   const [step, setStep] = useState<1 | 2>(1);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -122,11 +122,23 @@ export default function SellerRegisterForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Lỗi tạo shop");
 
+      // Cập nhật role của user thành 2 (seller)
+      const roleUpdateRes = await fetch(`http://localhost:3000/api/user/update-role/${user._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: 2 }),
+      });
+      const roleUpdateData = await roleUpdateRes.json();
+      if (!roleUpdateRes.ok) throw new Error(roleUpdateData.message || "Lỗi cập nhật role");
+
+      // Cập nhật user trong AuthContext
+      const updatedUser = { ...user, role: 2 }; // Cập nhật role trong object user
+      loginUser(updatedUser); // Gọi loginUser để cập nhật trạng thái user và lưu vào localStorage
+
       setSuccess("Đăng ký shop thành công!");
-      showToast("Đăng ký shop thành công!", "success");
       setStep(1);
-      setFormData({ shopName:"", email:"", phone:"", password:"", confirmPassword:"", avatar:null, description:"" });
-      setAddressForm({ detail:"", province:"", ward:"" });
+      setFormData({ shopName: "", email: "", phone: "", password: "", confirmPassword: "", avatar: null, description: "" });
+      setAddressForm({ detail: "", province: "", ward: "" });
     } catch (err: any) {
       setError(err.message);
     }
@@ -137,47 +149,51 @@ export default function SellerRegisterForm() {
     <div className="container-default">
       <article><h1>Đăng ký trở thành Người bán</h1><h2>____</h2></article>
       <aside>
-        <div className="form-container">
-          <div style={{textAlign:"center",marginBottom:12}}>Bước {step} / 2</div>
+        {user?.role === 2 ? (
+          <p>Không thể đăng ký thêm shop mới vì bạn đã có shop trước đó rồi !.</p>
+        ) : (
+          <div className="form-container">
+            <div style={{ textAlign: "center", marginBottom: 12 }}>Bước {step} / 2</div>
 
-          {step === 1 && (
-            <form onSubmit={handleNext}>
-              <div className="form-group"><input type="text" name="shopName" placeholder="Tên Shop" value={formData.shopName} onChange={handleChange}/></div>
-              <div className="form-group"><input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange}/></div>
-              <div className="form-group"><input type="text" name="phone" placeholder="Số điện thoại" value={formData.phone} onChange={handleChange}/></div>
-              <div className="form-group"><input type="password" name="password" placeholder="Mật khẩu" value={formData.password} onChange={handleChange}/></div>
-              <div className="form-group"><input type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu" value={formData.confirmPassword} onChange={handleChange}/></div>
-              <div className="form-group"><input type="file" name="avatar" onChange={handleChange}/></div>
-              <div className="form-group"><textarea style={{ width: "100%" }} name="description" placeholder="Mô tả shop" value={formData.description} onChange={handleChange}/></div>
-              <button type="submit" className="submit-btn">TIẾP TỤC</button>
-            </form>
-          )}
+            {step === 1 && (
+              <form onSubmit={handleNext}>
+                <div className="form-group"><input type="text" name="shopName" placeholder="Tên Shop" value={formData.shopName} onChange={handleChange} /></div>
+                <div className="form-group"><input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /></div>
+                <div className="form-group"><input type="text" name="phone" placeholder="Số điện thoại" value={formData.phone} onChange={handleChange} /></div>
+                <div className="form-group"><input type="password" name="password" placeholder="Mật khẩu" value={formData.password} onChange={handleChange} /></div>
+                <div className="form-group"><input type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu" value={formData.confirmPassword} onChange={handleChange} /></div>
+                <div className="form-group"><input type="file" name="avatar" onChange={handleChange} /></div>
+                <div className="form-group"><textarea style={{ width: "100%" }} name="description" placeholder="Mô tả shop" value={formData.description} onChange={handleChange} /></div>
+                <button type="submit" className="submit-btn">TIẾP TỤC</button>
+              </form>
+            )}
 
-          {step === 2 && (
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <select name="province" value={addressForm.province} onChange={handleAddressChange}>
-                  <option value="">Chọn Tỉnh/Thành</option>
-                  {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <select name="ward" value={addressForm.ward} onChange={handleAddressChange} disabled={!wards.length || isLoadingWards}>
-                  <option value="">{isLoadingWards ? "Đang tải..." : "Chọn Phường/Xã"}</option>
-                  {wards.map(w => <option key={w.code} value={w.code}>{w.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group"><input type="text" name="detail" placeholder="Số nhà, tên đường" value={addressForm.detail} onChange={handleAddressChange}/></div>
-              <div style={{display:"flex",gap:8}}>
-                <button type="button" onClick={() => setStep(1)} className="submit-btn">QUAY LẠI</button>
-                <button type="submit" className="submit-btn">ĐĂNG KÝ</button>
-              </div>
-            </form>
-          )}
+            {step === 2 && (
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <select name="province" value={addressForm.province} onChange={handleAddressChange}>
+                    <option value="">Chọn Tỉnh/Thành</option>
+                    {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <select name="ward" value={addressForm.ward} onChange={handleAddressChange} disabled={!wards.length || isLoadingWards}>
+                    <option value="">{isLoadingWards ? "Đang tải..." : "Chọn Phường/Xã"}</option>
+                    {wards.map(w => <option key={w.code} value={w.code}>{w.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group"><input type="text" name="detail" placeholder="Số nhà, tên đường" value={addressForm.detail} onChange={handleAddressChange} /></div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" onClick={() => setStep(1)} className="submit-btn">QUAY LẠI</button>
+                  <button type="submit" className="submit-btn">ĐĂNG KÝ</button>
+                </div>
+              </form>
+            )}
 
-          {error && <div style={{color:"red",marginTop:10}}>{error}</div>}
-          {success && <div style={{color:"green",marginTop:10}}>{success}</div>}
-        </div>
+            {error && <div style={{ color: "red", marginTop: 10 }}>{error}</div>}
+            {success && <div style={{ color: "green", marginTop: 10 }}>{success}</div>}
+          </div>
+        )}
       </aside>
     </div>
   );
