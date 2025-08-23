@@ -21,7 +21,7 @@ type ProductCard = {
   actions?: CardAction[];
 
   variants?: any[];
-  shop_id?:string;
+  shop_id?: string;
 };
 
 type BotResponse = {
@@ -44,11 +44,11 @@ const toICart = (p: any): ICart => ({
   image: p.image || "",
   shop_id: p.shop_id || p.shopId || "",
 
-  variant_id: p.variant_id, 
+  variant_id: p.variant_id,
   variant: p.variant || p.color || "",
 
   size: p.size || "",
-  size_id: p.size_id ,
+  size_id: p.size_id,
 
   quantity: Number(p.quantity || 1),
   quantity_Product: Number(p.quantity_Product ?? p.stock ?? 0),
@@ -139,7 +139,10 @@ function extractShopId(anyData: any): string {
   return "";
 }
 
-async function getShopIdByProductId(productId: string, domShopId?: string): Promise<string> {
+async function getShopIdByProductId(
+  productId: string,
+  domShopId?: string
+): Promise<string> {
   if (domShopId) return domShopId;
   if (shopIdCache.has(productId)) return shopIdCache.get(productId)!;
 
@@ -252,9 +255,9 @@ export default function BoxChatComponent() {
 
         const pickerHTML = hasVariants
           ? `
-      <div class="variant-wrap"
-           data-variants='${JSON.stringify(variants).replace(/'/g, "&apos;")}'
-           data-selected-color="" data-selected-size="" data-selected-sku="">
+       <div class="variant-wrap"
+     data-variants='${JSON.stringify(variants).replace(/'/g, "&apos;")}'
+      data-selected-color="" data-selected-size="">
         <div class="variant-row">
           <div class="variant-block">
             <div class="variant-label">Màu</div>
@@ -283,7 +286,7 @@ export default function BoxChatComponent() {
       </div>`
           : "";
 
-      return `
+        return `
   <div class="fiyo-product-card"
        data-product-id="${id}"
       data-shop-id="${c.shop_id || ""}">
@@ -430,7 +433,7 @@ export default function BoxChatComponent() {
                   .map((s: any) => {
                     const sizeLabel = s.size || s.label || s.name || "";
                     return `<button type="button" class="pill size"
-                  data-size="${sizeLabel}" data-sku="${s.sku || ""}"
+                  data-size="${sizeLabel}"
                   ${
                     Number(s.quantity) <= 0 ? 'data-disabled="1"' : ""
                   }>${sizeLabel}</button>`;
@@ -440,7 +443,6 @@ export default function BoxChatComponent() {
           }
 
           wrap.dataset.selectedSize = "";
-          wrap.dataset.selectedSku = "";
         } catch {}
         return;
       }
@@ -459,7 +461,6 @@ export default function BoxChatComponent() {
         sizeBtn.classList.add("is-active");
 
         wrap.dataset.selectedSize = sizeBtn.getAttribute("data-size") || "";
-        wrap.dataset.selectedSku = sizeBtn.getAttribute("data-sku") || "";
         return;
       }
 
@@ -476,7 +477,6 @@ export default function BoxChatComponent() {
       const url = btn.getAttribute("data-url") || "";
 
       const card = btn.closest(".fiyo-product-card")!;
-      const shopId = (card as HTMLElement).dataset.shopId || ""
       const name =
         (card.querySelector(".fiyo-product-name") as HTMLElement)?.innerText ||
         "";
@@ -489,86 +489,92 @@ export default function BoxChatComponent() {
       const price = Number((priceText || "").replace(/[^\d]/g, "")) || 0;
 
       // Nếu có picker -> bắt buộc chọn đủ
-      const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
-      if (wrap) {
-       const color = wrap.dataset.selectedColor || "";
-const sizeLabel = wrap.dataset.selectedSize || "";
-const sku = wrap.dataset.selectedSku || "";
-if (!color || !sizeLabel) {
-  addTextMessage("bot", "Vui lòng chọn <b>màu</b> và <b>size</b> trước khi thêm vào giỏ.", true);
+      // Nếu có picker -> bắt buộc chọn đủ
+const wrap = card.querySelector(".variant-wrap") as HTMLElement | null;
+if (wrap) {
+  const color = wrap.dataset.selectedColor || "";
+  const sizeLabel = wrap.dataset.selectedSize || "";
+  if (!color || !sizeLabel) {
+    addTextMessage("bot", "Vui lòng chọn <b>màu</b> và <b>size</b> trước khi thêm vào giỏ.", true);
+    return;
+  }
+
+  let variantId = "";
+  let sizeId = "";
+  let qtyInStock = 0;
+
+  try {
+    const variants = JSON.parse((wrap.getAttribute("data-variants") || "[]").replace(/&apos;/g, "'"));
+
+    // 1) tìm variant theo tên màu (color/variant/name/title)
+    let v = variants.find((x:any) => {
+      const cand = [x.color, x.variant, x.name, x.title].map((s:any)=> (s||"").toLowerCase().trim());
+      return cand.includes(color.toLowerCase().trim());
+    });
+
+    // 2) tìm size trong variant theo label (không dùng sku)
+    let s = v?.sizes?.find((x:any) => {
+      const label = (x.size || x.label || x.name || "").toLowerCase().trim();
+      return label === sizeLabel.toLowerCase().trim();
+    });
+
+    // 3) fallback: nếu chưa thấy, quét toàn bộ variants bằng label
+    if (!s) {
+      for (const vv of variants) {
+        const ss = (vv.sizes || []).find((x:any) => {
+          const label = (x.size || x.label || x.name || "").toLowerCase().trim();
+          return label === sizeLabel.toLowerCase().trim();
+        });
+        if (ss) { v = vv; s = ss; break; }
+      }
+    }
+
+    // Lấy id với nhiều phương án fallback
+    variantId = v?._id || v?.id || v?.variant_id || v?.variantId || "";
+    sizeId    = s?._id || s?.id || s?.size_id   || s?.sizeId    || "";
+    qtyInStock = Number(s?.quantity || 0);
+  } catch {
+    // noop
+  }
+
+  // Fallback nếu không có id chuẩn
+  if (!variantId) variantId = `${productId}`;
+  if (!sizeId)    sizeId    = `${variantId}:${(sizeLabel||"").toUpperCase()}`;
+
+  // Resolve shop_id (DOM → cache/API)
+  const domShopId = (card as HTMLElement).dataset.shopId || "";
+  const resolvedShopId = await getShopIdByProductId(productId, domShopId);
+
+  const itemForCart /* ICart */ = {
+    id: productId,
+    name,
+    image,
+    price,
+    quantity: 1,
+    quantity_Product: qtyInStock,
+    variant: color,
+    variant_id: variantId,
+    size: sizeLabel,
+    size_id: sizeId,
+    shop_id: resolvedShopId,
+  };
+
+  addToCart(itemForCart);
+  addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
+
+  if (action === "buy_now" && url) {
+    // KHÔNG gắn ?sku=... nữa
+    window.location.href = url;
+  }
   return;
 }
 
-let variantId = "";
-let sizeId = "";
-let qtyInStock = 0;
-
-try {
-  const variants = JSON.parse((wrap.getAttribute("data-variants") || "[]").replace(/&apos;/g, "'"));
-
-  // 1) tìm variant theo tên màu (color/variant/name/title)
-  let v = variants.find((x:any) => {
-    const cand = [x.color, x.variant, x.name, x.title].map((s:any)=> (s||"").toLowerCase().trim());
-    return cand.includes(color.toLowerCase().trim());
-  });
-
-  // 2) tìm size trong variant theo sizeLabel hoặc sku
-  let s = v?.sizes?.find((x:any) => {
-    const label = (x.size || x.label  || "").toLowerCase().trim();
-    return label === sizeLabel.toLowerCase().trim() || (!!sku && x.sku === sku);
-  });
-
-  // 3) fallback: nếu chưa thấy, quét toàn bộ variants bằng sku/size
-  if (!s) {
-    for (const vv of variants) {
-      const ss = (vv.sizes || []).find((x:any) => {
-        const label = (x.size || x.label  || "").toLowerCase().trim();
-        return label === sizeLabel.toLowerCase().trim() || (!!sku && x.sku === sku);
-      });
-      if (ss) { v = vv; s = ss; break; }
-    }
-  }
-
-  // Lấy id với nhiều phương án fallback
-  variantId = v?._id || v?.id || v?.variant_id || v?.variantId;
-  sizeId    = s?._id || s?.id || s?.size_id   || s?.sizeId    ;
-  qtyInStock = Number(s?.quantity || 0);
-} catch {
-  // noop
-}
-
-if (!variantId) variantId = `${productId}`;         
-if (!sizeId)    sizeId    = `${variantId}`;     
-const domShopId = (card as HTMLElement).dataset.shopId || "";
-const shopId = await getShopIdByProductId(productId, domShopId);
-const itemForCart /* ICart */ = {
-  id: productId,
-  name,
-  image,
-  price,
-  quantity: 1,
-  quantity_Product: qtyInStock,
-  variant: color,
-  variant_id: variantId,
-  size: sizeLabel,
-  size_id: sizeId,
-  shop_id: shopId,
-};
-
-addToCart(itemForCart);
-addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
-
-if (action === "buy_now" && url) {
-  const qp = sku ? `?sku=${encodeURIComponent(sku)}` : "";
-  window.location.href = `${url}${qp}`;
-}
-return;
-
-      }
 
       // Card không có variant -> thêm tối thiểu (variant/size rỗng)
       if (action === "add_to_cart") {
-        const domShopId = (btn.closest(".fiyo-product-card") as HTMLElement)?.dataset.shopId || "";
+        const domShopId =
+          (btn.closest(".fiyo-product-card") as HTMLElement)?.dataset.shopId ||
+          "";
         const shopId = await getShopIdByProductId(productId, domShopId);
         const item: ICart = {
           id: productId,
@@ -586,7 +592,9 @@ return;
         addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
       }
       if (action === "buy_now") {
-        const domShopId = (btn.closest(".fiyo-product-card") as HTMLElement)?.dataset.shopId || "";
+        const domShopId =
+          (btn.closest(".fiyo-product-card") as HTMLElement)?.dataset.shopId ||
+          "";
         const shopId = await getShopIdByProductId(productId, domShopId);
         const item: ICart = {
           id: productId,
@@ -635,7 +643,7 @@ return;
               ...c,
               id: c.id || c._id || "",
               price_text: c.price_text ?? VNPrice(Number(c.price || 0)),
-               shop_id: c.shop_id || "",
+              shop_id: c.shop_id || "",
             })) || [];
           addProductCardsMessage(data.reply || "Gợi ý sản phẩm:", safeCards);
         } else if (data.type === "add_to_cart") {
@@ -649,9 +657,7 @@ return;
           );
         }
         return; // thành công -> kết thúc
-      } catch {
-        
-      }
+      } catch {}
 
       try {
         const response = await fetch("http://localhost:3000/api/chat", {
