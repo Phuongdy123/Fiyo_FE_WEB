@@ -539,7 +539,7 @@ if (wrap) {
 
   // Fallback nếu không có id chuẩn
   if (!variantId) variantId = `${productId}`;
-  if (!sizeId)    sizeId    = `${variantId}:${(sizeLabel||"").toUpperCase()}`;
+  if (!sizeId)    sizeId    = `${variantId}`;
 
   // Resolve shop_id (DOM → cache/API)
   const domShopId = (card as HTMLElement).dataset.shopId || "";
