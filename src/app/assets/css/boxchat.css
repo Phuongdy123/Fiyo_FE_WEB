@@ -943,7 +943,6 @@ p {
     border-radius: 4px 20px 20px 4px !important;
 }
 .message-list .chat-item.agent .message-content:not(.emoji-message), .message-list .chat-item.app .message-content:not(.emoji-message), .message-list .chat-item.bot .message-content:not(.emoji-message) {
-    background: #f3f3f3 !important;
     color: #1f2b36;
 }
 .message-list .chat-item.agent .message-content, .message-list .chat-item.bot .message-content {
@@ -991,7 +990,6 @@ p {
 .chat-item .message-content {
     display: inline-block;
     color: #fff;
-    background: #02b875;
     border-radius: 4px 20px 20px;
     word-break: break-word;
 }
@@ -1604,3 +1602,86 @@ img {
     font-size: 16px;
   }
 }
+.fiyo-product-card{
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  gap: 10px;                 
+}
+
+.fiyo-product-img {
+  width: 100%;
+  aspect-ratio: 3 / 4;  
+  object-fit: cover;
+  border-radius: 10px;
+  background: #f6f6f6;
+  display: block;
+}
+
+/* Khối info dưới hình */
+.fiyo-product-info{
+  display: flex;
+  flex-direction: column;
+}
+
+.fiyo-product-name{ font-weight: 700; font-size: 15px; line-height: 1.35; }
+.fiyo-product-price{ color:#d33; font-weight: 800; margin: 4px 0 8px; }
+
+/* Mô tả gọn 3 dòng */
+.fiyo-product-desc{
+  color:#555; font-size: 13.5px; line-height: 1.5; margin-bottom: 10px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Nút luôn hiển thị phía dưới info */
+.fiyo-product-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fiyo-product-btn {
+  flex: 1 1 0;
+  height: 40px;               
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;          
+  overflow: hidden;
+}
+
+.fiyo-product-btn.primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.message-list .message-content{ 
+  overflow: visible !important;        
+}
+.fiyo-product-list{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px){
+  .fiyo-product-btn{ height:36px; }
+  .fiyo-product-img{ aspect-ratio: 4 / 4; }
+}
+.variant-wrap { margin:8px 0 6px }
+.variant-row { display:flex; flex-direction:column; gap:8px }
+.variant-block { display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+.variant-label { color:#d1d5db; font-size:12px; min-width:36px }
+.color-list,.size-list { display:flex; gap:6px; flex-wrap:wrap }
+.pill { height:30px; padding:0 10px; border-radius:8px; border:1px solid #2f2f2f; background:#1a1a1a; color:#e5e7eb; font-size:12px; cursor:pointer }
+.pill.is-active { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,.2) inset }
+.pill[data-disabled="1"] { opacity:.45; cursor:not-allowed }
+.muted { color:#6b7280; font-size:12px }
+/* boxchat.css */
+.fiyo-product-card .pill { pointer-events: auto; position: relative; z-index: 1; }
+.message-content, .message-content * { pointer-events: auto; }
