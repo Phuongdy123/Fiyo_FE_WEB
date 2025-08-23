@@ -42,11 +42,11 @@ const toICart = (p: any): ICart => ({
   price: Number(p.price || 0),
   image: p.image || "",
 
-  variant_id: p.variant_id || p.variantId || "",
+  variant_id: p.variant_id, 
   variant: p.variant || p.color || "",
 
   size: p.size || "",
-  size_id: p.size_id || p.sizeId,
+  size_id: p.size_id ,
 
   quantity: Number(p.quantity || 1),
   quantity_Product: Number(p.quantity_Product ?? p.stock ?? 0),
@@ -425,7 +425,7 @@ try {
 
   // 2) tìm size trong variant theo sizeLabel hoặc sku
   let s = v?.sizes?.find((x:any) => {
-    const label = (x.size || x.label || x.name || "").toLowerCase().trim();
+    const label = (x.size || x.label  || "").toLowerCase().trim();
     return label === sizeLabel.toLowerCase().trim() || (!!sku && x.sku === sku);
   });
 
@@ -433,7 +433,7 @@ try {
   if (!s) {
     for (const vv of variants) {
       const ss = (vv.sizes || []).find((x:any) => {
-        const label = (x.size || x.label || x.name || "").toLowerCase().trim();
+        const label = (x.size || x.label  || "").toLowerCase().trim();
         return label === sizeLabel.toLowerCase().trim() || (!!sku && x.sku === sku);
       });
       if (ss) { v = vv; s = ss; break; }
@@ -441,16 +441,15 @@ try {
   }
 
   // Lấy id với nhiều phương án fallback
-  variantId = v?._id || v?.id || v?.variant_id || v?.variantId || "";
-  sizeId    = s?._id || s?.id || s?.size_id   || s?.sizeId    || "";
+  variantId = v?._id || v?.id || v?.variant_id || v?.variantId;
+  sizeId    = s?._id || s?.id || s?.size_id   || s?.sizeId    ;
   qtyInStock = Number(s?.quantity || 0);
 } catch {
   // noop
 }
 
-// 4) Fallback cuối: vẫn cho add bằng ID an toàn (để Context merge key ổn định)
-if (!variantId) variantId = `${productId}:${color}`;        // pseudo-variant id
-if (!sizeId)    sizeId    = `${variantId}:${sizeLabel}`;    // pseudo-size id
+if (!variantId) variantId = `${productId}`;         
+if (!sizeId)    sizeId    = `${variantId}`;     
 
 const itemForCart /* ICart */ = {
   id: productId,
