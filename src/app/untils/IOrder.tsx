@@ -43,7 +43,7 @@ export interface OrderProduct {
     size: {
       _id: string;
       size: string;
-      sku?: string;
+      sku: string;
       quantity: number;
     };
   };

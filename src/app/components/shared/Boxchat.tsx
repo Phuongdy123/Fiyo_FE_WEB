@@ -430,7 +430,7 @@ export default function BoxChatComponent() {
                   .map((s: any) => {
                     const sizeLabel = s.size || s.label || s.name || "";
                     return `<button type="button" class="pill size"
-                  data-size="${sizeLabel}" data-sku="${s.sku || ""}"
+                  data-size="${sizeLabel}"
                   ${
                     Number(s.quantity) <= 0 ? 'data-disabled="1"' : ""
                   }>${sizeLabel}</button>`;
@@ -459,7 +459,6 @@ export default function BoxChatComponent() {
         sizeBtn.classList.add("is-active");
 
         wrap.dataset.selectedSize = sizeBtn.getAttribute("data-size") || "";
-        wrap.dataset.selectedSku = sizeBtn.getAttribute("data-sku") || "";
         return;
       }
 
