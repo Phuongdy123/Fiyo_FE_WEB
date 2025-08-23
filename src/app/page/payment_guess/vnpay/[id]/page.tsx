@@ -172,7 +172,7 @@ export default function VnpayGuestPage() {
                           {item.product.name}
                         </div>
                         <div className="checkout-success__product-sku">
-                         
+                          {item.product.size.sku}
                         </div>
                         <div className="checkout-success__product-options">
                           <div className="checkout-success__product-option">
