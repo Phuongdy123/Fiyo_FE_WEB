@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import "@/app/assets/css/shop.css";
 import "@/app/assets/css/category.css";
-  import { useUserChat } from "../chat/UserChatProvider";
-
+import { useUserChat } from "../chat/UserChatProvider";
 
 import type { IShop } from "@/app/untils/IShop";
 import type { IFilter } from "@/app/untils/IFilter";
@@ -165,8 +164,16 @@ export default function PublicShop({ shopId }: Props) {
 
       if (typeof data.followers_count === "number") setFollowersCount(data.followers_count);
       if (typeof data.following === "boolean") setFollowing(data.following);
-    } catch { /* ignore */ }
-    finally { setFollowBusy(false); }
+
+      // Reset page after successful follow/unfollow
+      window.location.reload();
+    } catch {
+      // Revert state on error
+      setFollowing((prev) => !prev);
+      setFollowersCount((c) => (following ? c + 1 : Math.max(0, c - 1)));
+    } finally {
+      setFollowBusy(false);
+    }
   }, [shop?._id, viewerId, followBusy, following, isOwner]);
 
   if (error) return <p style={{ color: "red" }}>{error}</p>;
@@ -212,48 +219,48 @@ export default function PublicShop({ shopId }: Props) {
               </span>
             </div>
           </div>
-<div className="shop-hero__middle">
-  <ul className="shop-hero__stats">
-    <li>
-      <i className="fas fa-phone" />
-      <span className="label">Điện thoại</span>
-      <strong>{(shop as any).phone}</strong>
-    </li>
-    <li>
-  <i className="fas fa-box-open" />
-  <span className="label">Sản phẩm</span>
-  <strong>{(shop as any).total_products || 0}</strong>
-</li>
-<li>
-  <i className="fas fa-star" />
-  <span className="label">Đánh giá</span>
-  <strong>5 ★</strong>
-</li>
-    <li>
-      <i className="fas fa-user-group" />
-      <span className="label">Người theo dõi</span>
-      <strong>
-        {followersCount > 0
-          ? `${followersCount} người`
-          : "Chưa có người theo dõi"}
-      </strong>
-    </li>
-    <li className="hide-sm">
-      <i className="fas fa-calendar-alt" />
-      <span className="label">Tham gia</span>
-      <strong>
-        {(shop as any).created_at
-          ? new Date((shop as any).created_at).toLocaleDateString("vi-VN")
-          : "Không rõ"}
-      </strong>
-    </li>
-    <li className="truncate hide-sm">
-      <i className="fas fa-envelope" />
-      <span className="label">Email</span>
-      <strong>{(shop as any).email}</strong>
-    </li>
-  </ul>
-</div>
+          <div className="shop-hero__middle">
+            <ul className="shop-hero__stats">
+              <li>
+                <i className="fas fa-phone" />
+                <span className="label">Điện thoại</span>
+                <strong>{(shop as any).phone}</strong>
+              </li>
+              <li>
+                <i className="fas fa-box-open" />
+                <span className="label">Sản phẩm</span>
+                <strong>{(shop as any).total_products || 0}</strong>
+              </li>
+              <li>
+                <i className="fas fa-star" />
+                <span className="label">Đánh giá</span>
+                <strong>5 ★</strong>
+              </li>
+              <li>
+                <i className="fas fa-user-group" />
+                <span className="label">Người theo dõi</span>
+                <strong>
+                  {followersCount > 0
+                    ? `${followersCount} người`
+                    : "Chưa có người theo dõi"}
+                </strong>
+              </li>
+              <li className="hide-sm">
+                <i className="fas fa-calendar-alt" />
+                <span className="label">Tham gia</span>
+                <strong>
+                  {(shop as any).created_at
+                    ? new Date((shop as any).created_at).toLocaleDateString("vi-VN")
+                    : "Không rõ"}
+                </strong>
+              </li>
+              <li className="truncate hide-sm">
+                <i className="fas fa-envelope" />
+                <span className="label">Email</span>
+                <strong>{(shop as any).email}</strong>
+              </li>
+            </ul>
+          </div>
 
           <div className="shop-hero__actions">
             <button
@@ -271,8 +278,10 @@ export default function PublicShop({ shopId }: Props) {
                 ? "Theo Dõi"
                 : "Đăng nhập để theo dõi"}
             </button>
-            <button className="btn-outline"
-            onClick={() => openForShop(shop._id)}>
+            <button
+              className="btn-outline"
+              onClick={() => openForShop(shop._id)}
+            >
               <i className="far fa-comments" /> Chat
             </button>
           </div>
