@@ -73,6 +73,21 @@
     display: flex
 ;
 }
+.category-children {
+  overflow-x: auto; /* Cho phép cuộn ngang */
+  -webkit-overflow-scrolling: touch; /* Mượt hơn trên iOS */
+  scrollbar-width: none; /* Ẩn thanh cuộn Firefox */
+}
+
+.category-children::-webkit-scrollbar {
+  display: none; /* Ẩn thanh cuộn trên Chrome/Safari */
+}
+
+.category-children .swiper-wrapper {
+  display: flex;
+  gap: 10px; /* khoảng cách giữa các item */
+}
+
 .swiper-wrapper {
     position: relative;
     width: 100%;
