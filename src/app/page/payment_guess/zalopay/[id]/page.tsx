@@ -48,7 +48,7 @@ export default function ZalopayPage() {
 
   useEffect(() => {
     if (id) {
-      fetch(`http://localhost:3000/api/orderDetail/${id}`)
+      fetch(`https://fiyo.click/api/orderDetail/${id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.status) {
@@ -91,7 +91,7 @@ export default function ZalopayPage() {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/api/orders/zalopay', {
+      const res = await fetch('https://fiyo.click/api/orders/zalopay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),

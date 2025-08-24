@@ -14,7 +14,7 @@ export default function ShopCategories({ shopId }: { shopId: string }) {
     if (!shopId) return;
     (async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/shop/${shopId}/categories`);
+        const res = await fetch(`https://fiyo.click/api/shop/${shopId}/categories`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
         setCategories(data.categories);

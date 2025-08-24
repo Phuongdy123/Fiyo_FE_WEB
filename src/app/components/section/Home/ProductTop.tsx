@@ -24,7 +24,7 @@ export default function ProductBottomSection() {
 
       while (tempList.length < limit) {
         const res = await fetch(
-          `http://localhost:3000/api/products/pro?page=${currentPageFetch}&limit=${limit}`
+          `https://fiyo.click/api/products/pro?page=${currentPageFetch}&limit=${limit}`
         );
         const data = await res.json();
 

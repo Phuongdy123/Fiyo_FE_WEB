@@ -275,7 +275,7 @@
       const fetchData = async () => {
         try {
           const defaultAddress = await getDefaultAddress(
-            `http://localhost:3000/api/address/user/${userId}`
+            `https://fiyo.click/api/address/user/${userId}`
           );
           if (defaultAddress) {
             setDefaultAddress(defaultAddress);
@@ -286,7 +286,7 @@
           }
 
           const allAddresses = await getAllAddress(
-            `http://localhost:3000/api/address/user/${userId}`
+            `https://fiyo.click/api/address/user/${userId}`
           );
           setAddressList(allAddresses);
 
@@ -350,7 +350,7 @@
       };
 
       try {
-        const res = await fetch("http://localhost:3000/api/orders", {
+        const res = await fetch("https://fiyo.click/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
@@ -428,7 +428,7 @@
         setShowNewAddressModal(false);
 
         const updatedAddresses = await getAllAddress(
-          `http://localhost:3000/api/address/user/${userId}`
+          `https://fiyo.click/api/address/user/${userId}`
         );
         setAddressList(updatedAddresses);
 

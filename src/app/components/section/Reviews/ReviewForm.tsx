@@ -49,7 +49,7 @@ export default function SectionReviewForm({
         const product = uniqueProducts[i];
         try {
           const res = await fetch(
-            `http://localhost:3000/api/review/check/${product._id}/${product.user_id}`
+            `https://fiyo.click/api/review/check/${product._id}/${product.user_id}`
           );
           const data = await res.json();
           if (data?.reviewed) result.push(product._id);
@@ -100,7 +100,7 @@ export default function SectionReviewForm({
     fd.append("content", v.content || "Tốt");
     (v.images || []).forEach((file) => fd.append("images", file));
 
-    const res = await fetch("http://localhost:3000/api/review", {
+    const res = await fetch("https://fiyo.click/api/review", {
       method: "POST",
       body: fd,
     });

@@ -45,7 +45,7 @@ export default function CancelOrderModal({
       setLoading(true);
 
       // Gọi API hủy đơn con
-      const res = await fetch(`http://localhost:3000/api/orderShop/${orderId}/cancel`, {
+      const res = await fetch(`https://fiyo.click/api/orderShop/${orderId}/cancel`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note }),

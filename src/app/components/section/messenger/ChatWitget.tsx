@@ -19,7 +19,7 @@ export default function ChatWidget({
   threadId,
   currentUserId,
   role,
-  apiBase = "http://localhost:3000",
+  apiBase = "https://fiyo.click",
   pollMs = 3000,
   markReadEnabled = true,
   isActive = true,

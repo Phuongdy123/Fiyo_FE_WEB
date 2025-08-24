@@ -51,7 +51,7 @@
     const [shop, setShop] = useState<ShopAPI | null>(null);
     const [loading, setLoading] = useState(false);
 
-    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click";
 
     const url = useMemo(() => {
       if ("shopId" in props && props.shopId) {

@@ -120,12 +120,12 @@ export default function SellerRegisterForm() {
       form.append("address", fullAddress);
       if (formData.avatar) form.append("avatar", formData.avatar);
 
-      const res = await fetch("http://localhost:3000/api/shop/", { method: "POST", body: form });
+      const res = await fetch("https://fiyo.click/api/shop/", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Lỗi tạo shop");
 
       // Cập nhật role của user thành 2 (seller)
-      const roleUpdateRes = await fetch(`http://localhost:3000/api/user/update-role/${user._id}`, {
+      const roleUpdateRes = await fetch(`https://fiyo.click/api/user/update-role/${user._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: 2 }),

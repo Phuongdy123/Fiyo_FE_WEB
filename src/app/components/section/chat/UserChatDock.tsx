@@ -18,7 +18,7 @@ type ImageMsg = BaseMsg & { kind: "image"; src: string };
 type FileMsg = BaseMsg & { kind: "file"; name: string };
 type Message = TextMsg | ImageMsg | FileMsg;
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
 
 // ===== helpers =====
 function rid() {

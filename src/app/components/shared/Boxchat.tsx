@@ -58,7 +58,7 @@ const API_BASE =
   (typeof window !== "undefined" &&
     (window as any).env?.NEXT_PUBLIC_API_BASE_URL) ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:3000";
+  "https://fiyo.click";
 
 const chatApi = {
   async welcome() {
@@ -186,7 +186,7 @@ function normalizeVariants(raw: any[]): any[] {
 /** ========= Fallback: fetch variants by productId nếu data-variants thiếu _id ========= */
 async function fetchVariantsByProduct(productId: string) {
   try {
-    const url = `http://localhost:3000/api/variant/products/${productId}`; // chỉnh nếu API base khác
+    const url = `https://fiyo.click/api/variant/products/${productId}`; // chỉnh nếu API base khác
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json(); // IProductVariant[] dạng [{ product_id, variants: [...] }]
@@ -773,7 +773,7 @@ const goCheckout = () => {
 
       // Fallback endpoint cũ localhost
       try {
-        const response = await fetch("http://localhost:3000/api/chat", {
+        const response = await fetch("https://fiyo.click/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text, userId }),

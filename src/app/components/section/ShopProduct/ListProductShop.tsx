@@ -4,7 +4,7 @@ import type { IProduct } from "@/app/untils/IProduct";
 import type { IFilter } from "@/app/untils/IFilter";
 import ProductList from "../../shared/ListProduct";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
 const API_PRODUCTS_BASE = `${API_BASE}/api/products`;
 const API_PRODUCTS_BY_SHOP = (shopId: string) => `${API_PRODUCTS_BASE}/shop/${shopId}`;
 const API_PRODUCTS_BY_SHOP_AND_CATEGORY = (shopId: string, categoryId: string) =>
