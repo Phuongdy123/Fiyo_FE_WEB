@@ -771,7 +771,7 @@ const goCheckout = () => {
         return; // thành công -> kết thúc
       } catch {}
 
-      // Fallback endpoint cũ localhost
+      // Fallback endpoint cũ https://fiyo.click
       try {
         const response = await fetch("https://fiyo.click/api/chat", {
           method: "POST",
