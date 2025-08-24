@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import "@/app/assets/css/shop.css";
 import "@/app/assets/css/category.css";
+  import { useUserChat } from "../chat/UserChatProvider";
+
 
 import type { IShop } from "@/app/untils/IShop";
 import type { IFilter } from "@/app/untils/IFilter";
@@ -27,6 +29,7 @@ const API_CATEGORY_BY_SHOP = (id: string) => `${API_BASE}/api/category/shop/${id
 const API_FOLLOW_BASE = `${API_BASE}/api/shop`;
 
 export default function PublicShop({ shopId }: Props) {
+  const { openForShop } = useUserChat();
   const { user } = useAuth();
   const viewerId = user?._id ? String(user._id) : "";
 
@@ -268,7 +271,8 @@ export default function PublicShop({ shopId }: Props) {
                 ? "Theo Dõi"
                 : "Đăng nhập để theo dõi"}
             </button>
-            <button className="btn-outline">
+            <button className="btn-outline"
+            onClick={() => openForShop(shop._id)}>
               <i className="far fa-comments" /> Chat
             </button>
           </div>
