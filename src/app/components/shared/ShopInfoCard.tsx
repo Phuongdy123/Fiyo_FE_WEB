@@ -179,7 +179,7 @@
 
         {/* Right */}
         <div className="shopRight">
-          <div className="shopCol"><div className="shopLabel">Đánh Giá</div><div className="shopValue">{reviews.toLocaleString("vi-VN")}</div></div>
+          <div className="shopCol"><div className="shopLabel">Đánh Giá</div><div className="shopValue">  <strong>5 ★</strong></div></div>
           <div className="shopCol"><div className="shopLabel">Tỉ Lệ Phản Hồi</div><div className="shopValue">{responseRate}%</div></div>
           <div className="shopCol"><div className="shopLabel">Tham Gia</div><div className="shopValue">{joinedText}</div></div>
           <div className="shopCol"><div className="shopLabel">Sản Phẩm</div><div className="shopValue">{products.toLocaleString("vi-VN")}</div></div>

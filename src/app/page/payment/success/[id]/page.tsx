@@ -31,9 +31,6 @@
           <div className="checkout-success checkout-vnpay">
             <header className="checkout-header checkout-header--vnpay">
               <div className="checkout-header__container">
-                <a href="/" className="checkout-header__logo">
-                  <img src="/_nuxt/img/logo.ad56f98.svg" alt="logo" />
-                </a>
               </div>
             </header>
 
@@ -48,8 +45,8 @@
               </p>
 
               <div className="checkout-success__actions text-center">
-                <a href="/" className="btn btn-outline-primary mt-4">
-                  Quay về trang chủ ngay
+                <a href="/page/order" className="btn btn-outline-primary mt-4">
+                  Xem đơn hàng của bạn
                 </a>
               </div>
             </div>

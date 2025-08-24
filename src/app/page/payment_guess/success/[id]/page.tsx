@@ -31,9 +31,7 @@
           <div className="checkout-success checkout-vnpay">
             <header className="checkout-header checkout-header--vnpay">
               <div className="checkout-header__container">
-                <a href="/" className="checkout-header__logo">
-                  <img src="/_nuxt/img/logo.ad56f98.svg" alt="logo" />
-                </a>
+               
               </div>
             </header>
 

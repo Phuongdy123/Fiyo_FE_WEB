@@ -94,6 +94,7 @@ export default function Home() {
           <img src="https://2885371169.e.cdneverest.net/media/Simiconnector/1.Aophong_blockhomepage_desktop-17Mar25H.webp" />
         </div>
         <ProductTopSection></ProductTopSection>
+        
       </div>
     </>
   );

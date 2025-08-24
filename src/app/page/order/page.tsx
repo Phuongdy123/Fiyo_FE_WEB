@@ -240,7 +240,7 @@ export default function AccountPage() {
                       <div className="order">
                         {/* Hàng tiêu đề: TÊN SHOP bên trái, badge trạng thái bên phải */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <h3>{row.shopName || "Online"}</h3>
+                          <h3> Đơn hàng thuộc shop "{row.shopName || "Online"}"</h3>
                           <div className="order-status">{translateStatus(row.status)}</div>
                         </div>
 

@@ -1,8 +1,8 @@
 "use client";
-import HomeEffectsJs from "@/app/assets/js/home";
 import { useState, useEffect } from "react";
 import { IProduct } from "@/app/untils/IProduct";
 import { getAllProductSaleCount } from "@/app/services/SProduct";
+import Link from "next/link";
 
 export default function HotProductSection() {
   const [listProduct, setListProduct] = useState<IProduct[]>([]);
@@ -44,21 +44,20 @@ export default function HotProductSection() {
               <div wrapper-tag="div" className="product-item__info">
                 <div className="product-item__photo">
                   <div>
-                    <a
-                      href="#"
-                      className="product-item__image"
-                      tabIndex={-1}
-                      aria-label={product.name}
-                    >
-                      <img
-                        src={product.images[0]}
-                        width={415}
-                        height={554}
-                        alt={product.name}
-                        loading="lazy"
-                        className="product-image-photo"
-                      />
-                    </a>
+                                  <Link
+                href={`/page/detail/${product._id}`}
+                className="product-item__image"
+              >
+                <img
+                  src={`${product.images?.[0]}`}
+                  width={415}
+                  height={554}
+                  alt={product.name}
+                  loading="lazy"
+                  className="product-image-photo"
+                  style={{ userSelect: "none", caretColor: "transparent" }}
+                />
+              </Link>
                   </div>
                   <div className="product-item__label--image">
                     <img
@@ -99,7 +98,10 @@ export default function HotProductSection() {
             </div>
           ))}
         </div>
+      
       </div>
+      
+      
     </>
   );
 }

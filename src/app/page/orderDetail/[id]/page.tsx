@@ -148,7 +148,7 @@ export default function AccountPage({
       if (res.status === 201) {
         showToast("Đánh giá thành công", "success");
       } else if (res.status === 400 && data.message?.includes("đã đánh giá")) {
-        showToast("Bạn đã đánh giá sản phẩm này rồi", "error");
+       
       } else {
         showToast(`Thất bại: ${data.message || "Lỗi không xác định"}`, "error");
       }

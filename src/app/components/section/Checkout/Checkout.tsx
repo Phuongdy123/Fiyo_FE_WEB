@@ -369,7 +369,7 @@
           } else {
             showToast("Đặt hàng thành công!", "success");
             setTimeout(() => {
-              window.location.href = "/";
+              window.location.href = "/page/order";
             }, 1500);
           }
         } else {
@@ -583,27 +583,7 @@ const finalTotal = Math.max(0, total - discountAmount + shippingFee);
                     </span>
                   </span>
                 </label>
-                <label className="payment-method__option">
-                  <input
-                    type="radio"
-                    value="zalopay"
-                    name="payment-method"
-                    checked={paymentMethod === "zalopay"}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span className="payment-method__option-content">
-                    <b className="payment-method__option-title">
-                      Thanh toán qua ZaloPay
-                    </b>
-                    <span className="payment-method__option-image">
-                      <img
-                        src="https://simg.zalopay.com.vn/zlp-website/assets/icon_hd_export_svg_ee6dd1e844.png"
-                        alt="ZaloPay"
-                        style={{ width: 50, height: "auto" }}
-                      />
-                    </span>
-                  </span>
-                </label>
+               
               </div>
             </div>
             <div className="checkout-step checkout-review active">
