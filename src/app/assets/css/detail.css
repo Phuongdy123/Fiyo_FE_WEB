@@ -644,14 +644,14 @@ line-height: 0;
 }
 
 .shopMeta{ display:grid; grid-auto-rows:min-content; row-gap:6px; }
-.shopName{ font-size:20px; font-weight:700; color:#222; line-height:1.15; }
+.shopName{ font-size:18px; font-weight:700; color:#222; line-height:1.15; }
 .shopOnline{ font-size:14px; color:#9097a3; }
 
 /* Buttons gọn – cùng chiều cao */
-.shopActions{ display:flex; gap:12px; margin-top:4px; }
+.shopActions{ display:flex; gap:8px; margin-top:4px; }
 .shopActions button{
-  height:36px; padding:0 14px;
-  border-radius:8px; font-weight:600; cursor:pointer;
+  height:36px; padding:0 10px;
+  border-radius:3px; font-weight:600; cursor:pointer;
   display:inline-flex; align-items:center; gap:8px;
   line-height:1; white-space:nowrap;
 }
@@ -684,8 +684,8 @@ line-height: 0;
 }
 
 .shopCol{ display:flex; align-items:baseline; gap:14px; }
-.shopLabel{ color:#9097a3; font-size:16px; }
-.shopValue{ color:#cd4433; font-weight:700; font-size:16px; }
+.shopLabel{ color:#9097a3; font-size:14px; }
+.shopValue{ color:#cd4433; font-weight:700; font-size:14px; }
 
 /* ==== Responsive ==== */
 @media (max-width:1024px){

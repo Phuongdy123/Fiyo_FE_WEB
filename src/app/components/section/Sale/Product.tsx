@@ -12,6 +12,7 @@ import FilterEffectJS from '../../../assets/js/filter';
 import ProductList from "../../shared/ListProduct";
 import PageNavComponents from "../../shared/PageNav";
 import { IFilter } from "@/app/untils/IFilter";
+import BreadcumComponent from "../../shared/Breadcrumb";
 
 export default function ProductSection() {
   let title = "hahaha";
@@ -121,8 +122,11 @@ const getSizeOptions = () => {
         <div className="banner">
           <img src="https://2885371169.e.cdneverest.net/pub/media/Simiconnector/spmoi_cate_desktop-220425.webp" />
         </div>
+             
+        
 
         <div className="main-content">
+          
           {/* --- Danh mục --- */}
           <div className="categories">
             <div
@@ -141,6 +145,7 @@ const getSizeOptions = () => {
               </div>
             ))}
           </div>
+          
 
           {/* --- Bộ lọc --- */}
           <div className="filter-container">

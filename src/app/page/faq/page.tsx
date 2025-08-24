@@ -1,7 +1,6 @@
 // src/app/faq/page.tsx
 export const metadata = { title: "Hỏi đáp | Fiyo" };
 
-import "@/app/assets/css/faq.css";
 
 type QA = { q: string; a: string };
 

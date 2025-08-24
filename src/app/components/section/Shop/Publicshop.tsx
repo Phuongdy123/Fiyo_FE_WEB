@@ -9,6 +9,7 @@ import { defaultFilters } from "@/app/untils/IFilter";
 
 import ShopFilterSection from "../ShopProduct/ShopFilterSection";
 import ListProductShop from "../ShopProduct/ListProductShop";
+import { useAuth } from "@/app/context/CAuth";
 
 interface ICategory {
   _id: string;
@@ -18,29 +19,42 @@ interface ICategory {
 }
 
 type Rating = number | { average: number; count: number };
-
 type Props = { shopId: string };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_SHOP_DETAIL = (id: string) => `${API_BASE}/api/shop/${id}`;
+const API_CATEGORY_BY_SHOP = (id: string) => `${API_BASE}/api/category/shop/${id}`;
+const API_FOLLOW_BASE = `${API_BASE}/api/shop`;
+
 export default function PublicShop({ shopId }: Props) {
-  // ─── State ────────────────────────────────
+  const { user } = useAuth();
+  const viewerId = user?._id ? String(user._id) : "";
+
+  // State
   const [shop, setShop] = useState<IShop | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [error, setError] = useState("");
   const [cateError, setCateError] = useState("");
   const [loadingCate, setLoadingCate] = useState(false);
-  const [filters, setFilters] = useState<IFilter>(defaultFilters);
+  const [filters, setFilters] = useState<IFilter & { categoryId?: string | null }>(
+    { ...defaultFilters, categoryId: null }
+  );
 
-  // ─── Hooks cố định ───────────────────────
+  // Follow state
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [following, setFollowing] = useState<boolean>(false);
+  const [followBusy, setFollowBusy] = useState<boolean>(false);
+
   const safeCategories = useMemo(
     () => (Array.isArray(categories) ? categories : []),
     [categories]
   );
 
-  const handleFilterChange = useCallback((next: IFilter) => {
+  const handleFilterChange = useCallback((next: IFilter & { categoryId?: string | null }) => {
     setFilters(next);
   }, []);
 
-  // ─── Fetch Shop & Categories theo shopId ─
+  // Fetch shop & categories
   useEffect(() => {
     if (!shopId) return;
     const ac = new AbortController();
@@ -48,32 +62,45 @@ export default function PublicShop({ shopId }: Props) {
     (async () => {
       try {
         setError("");
-        // lấy shop theo id (đúng với router: GET /api/shop/:id)
-        const res = await fetch(`http://localhost:3000/api/shop/${shopId}`, {
-          cache: "no-store",
-          signal: ac.signal,
-        });
+
+        const res = await fetch(API_SHOP_DETAIL(shopId), { cache: "no-store", signal: ac.signal });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Không tải được shop");
 
-        // hỗ trợ nhiều shape trả về
-        const shopData = data?.shop ?? data?.result ?? data;
+        const shopData: any = data?.shop ?? data?.result ?? data;
         if (!shopData?._id) throw new Error("Shop không hợp lệ");
         setShop(shopData);
 
-        // lấy categories theo shopId (đúng pattern cũ: /api/category/shop/:shopId)
+        // followers count
+        const initCount = Number(
+          shopData?.followers_count ??
+            (Array.isArray(shopData?.followers) ? shopData.followers.length : 0)
+        );
+        setFollowersCount(isNaN(initCount) ? 0 : initCount);
+
+        // check following
+        if (viewerId) {
+          try {
+            const chk = await fetch(
+              `${API_FOLLOW_BASE}/${shopData._id}/following/${viewerId}`,
+              { cache: "no-store", signal: ac.signal }
+            );
+            const chkData = await chk.json();
+            if (chk.ok) setFollowing(!!chkData?.following);
+          } catch { /* ignore */ }
+        } else {
+          setFollowing(false);
+        }
+
+        // categories
         setLoadingCate(true);
-        setCateError("");
         try {
-          const cateRes = await fetch(
-            `http://localhost:3000/api/category/shop/${shopData._id}`,
-            { cache: "no-store", signal: ac.signal }
-          );
+          const cateRes = await fetch(API_CATEGORY_BY_SHOP(shopData._id), {
+            cache: "no-store", signal: ac.signal,
+          });
           const cateData = await cateRes.json();
           if (cateRes.ok) {
-            setCategories(
-              Array.isArray(cateData.categories) ? cateData.categories : []
-            );
+            setCategories(Array.isArray(cateData.categories) ? cateData.categories : []);
           } else {
             setCategories([]);
             setCateError(cateData.message || "Không tải được danh mục");
@@ -87,9 +114,58 @@ export default function PublicShop({ shopId }: Props) {
     })();
 
     return () => ac.abort();
-  }, [shopId]);
+  }, [shopId, viewerId]);
 
-  // ─── Render ───────────────────────────────
+  // isOwner
+  const isOwner = useMemo(() => {
+    const raw: any =
+      (shop as any)?.owner_id ??
+      (shop as any)?.user_id ??
+      (shop as any)?.owner ?? null;
+    const ownerId = typeof raw === "object" && raw
+      ? raw?._id ?? raw?.id ?? raw?.toString?.()
+      : raw;
+    return ownerId && viewerId && String(ownerId) === String(viewerId);
+  }, [shop, viewerId]);
+
+  // follow toggle
+  const onToggleFollow = useCallback(async () => {
+    if (!shop?._id) return;
+    if (!viewerId) {
+      alert("Bạn cần đăng nhập để theo dõi.");
+      return;
+    }
+    if (isOwner) {
+      alert("Bạn không thể theo dõi shop của chính mình.");
+      return;
+    }
+    if (followBusy) return;
+
+    setFollowBusy(true);
+    setFollowing((prev) => !prev);
+    setFollowersCount((c) => (following ? Math.max(0, c - 1) : c + 1));
+
+    try {
+      const url = `${API_FOLLOW_BASE}/${shop._id}/follow/toggle?user_id=${encodeURIComponent(viewerId)}`;
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "X-User-Id": viewerId },
+        body: JSON.stringify({ user_id: viewerId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFollowing((prev) => !prev);
+        setFollowersCount((c) => (following ? c + 1 : Math.max(0, c - 1)));
+        throw new Error(data?.message || "Lỗi follow");
+      }
+
+      if (typeof data.followers_count === "number") setFollowersCount(data.followers_count);
+      if (typeof data.following === "boolean") setFollowing(data.following);
+    } catch { /* ignore */ }
+    finally { setFollowBusy(false); }
+  }, [shop?._id, viewerId, followBusy, following, isOwner]);
+
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   if (!shop) return <p>Đang tải thông tin shop...</p>;
 
@@ -98,10 +174,6 @@ export default function PublicShop({ shopId }: Props) {
     typeof ratingRaw === "object" && ratingRaw
       ? `${ratingRaw.average} ★ (${ratingRaw.count} đánh giá)`
       : ratingRaw ?? 0;
-
-  const followersCount = Array.isArray((shop as any).followers)
-    ? (shop as any).followers.length
-    : (shop as any).followers_count ?? 0;
 
   return (
     <div className="main-content">
@@ -137,53 +209,64 @@ export default function PublicShop({ shopId }: Props) {
               </span>
             </div>
           </div>
-
-          <div className="shop-hero__middle">
-            <ul className="shop-hero__stats">
-              <li>
-                <i className="fas fa-phone" />
-                <span className="label">Điện thoại</span>
-                <strong>{(shop as any).phone}</strong>
-              </li>
-              <li>
-                <i className="fas fa-box" />
-                <span className="label">Đã bán</span>
-                <strong>{(shop as any).sale_count || 0}</strong>
-              </li>
-              <li>
-                <i className="fas fa-star" />
-                <span className="label">Đánh giá</span>
-                <strong>{rating}</strong>
-              </li>
-              <li>
-                <i className="fas fa-user-group" />
-                <span className="label">Người theo dõi</span>
-                <strong>
-                  {followersCount > 0
-                    ? `${followersCount} người`
-                    : "Chưa có người theo dõi"}
-                </strong>
-              </li>
-              <li className="hide-sm">
-                <i className="fas fa-calendar-alt" />
-                <span className="label">Tham gia</span>
-                <strong>
-                  {(shop as any).created_at
-                    ? new Date((shop as any).created_at).toLocaleDateString("vi-VN")
-                    : "Không rõ"}
-                </strong>
-              </li>
-              <li className="truncate hide-sm">
-                <i className="fas fa-envelope" />
-                <span className="label">Email</span>
-                <strong>{(shop as any).email}</strong>
-              </li>
-            </ul>
-          </div>
+<div className="shop-hero__middle">
+  <ul className="shop-hero__stats">
+    <li>
+      <i className="fas fa-phone" />
+      <span className="label">Điện thoại</span>
+      <strong>{(shop as any).phone}</strong>
+    </li>
+    <li>
+  <i className="fas fa-box-open" />
+  <span className="label">Sản phẩm</span>
+  <strong>{(shop as any).total_products || 0}</strong>
+</li>
+<li>
+  <i className="fas fa-star" />
+  <span className="label">Đánh giá</span>
+  <strong>5 ★</strong>
+</li>
+    <li>
+      <i className="fas fa-user-group" />
+      <span className="label">Người theo dõi</span>
+      <strong>
+        {followersCount > 0
+          ? `${followersCount} người`
+          : "Chưa có người theo dõi"}
+      </strong>
+    </li>
+    <li className="hide-sm">
+      <i className="fas fa-calendar-alt" />
+      <span className="label">Tham gia</span>
+      <strong>
+        {(shop as any).created_at
+          ? new Date((shop as any).created_at).toLocaleDateString("vi-VN")
+          : "Không rõ"}
+      </strong>
+    </li>
+    <li className="truncate hide-sm">
+      <i className="fas fa-envelope" />
+      <span className="label">Email</span>
+      <strong>{(shop as any).email}</strong>
+    </li>
+  </ul>
+</div>
 
           <div className="shop-hero__actions">
-            <button className="btn-outline">
-              <i className="far fa-user" /> Theo Dõi
+            <button
+              className="btn-outline"
+              onClick={onToggleFollow}
+              disabled={followBusy}
+              title={following ? "Bỏ theo dõi" : "Theo dõi"}
+            >
+              <i className="far fa-user" />{" "}
+              {followBusy
+                ? "Đang xử lý…"
+                : following
+                ? "Bỏ theo dõi"
+                : viewerId
+                ? "Theo Dõi"
+                : "Đăng nhập để theo dõi"}
             </button>
             <button className="btn-outline">
               <i className="far fa-comments" /> Chat
@@ -196,22 +279,25 @@ export default function PublicShop({ shopId }: Props) {
       <div className="cate-children">
         <h1 className="category-title-shop">Danh mục sản phẩm</h1>
         {loadingCate && <p>Đang tải danh mục…</p>}
-        {!loadingCate && cateError && (
-          <p style={{ color: "orange" }}>{cateError}</p>
-        )}
+        {!loadingCate && cateError && <p style={{ color: "orange" }}>{cateError}</p>}
         {!loadingCate && !cateError && (safeCategories.length > 0 ? (
           <div className="category-children">
             <div className="category-children__content swiper">
               <div className="swiper-wrapper">
                 {safeCategories.map((cate) => {
-                  const image =
-                    Array.isArray(cate.images) && cate.images.length > 0
-                      ? cate.images[0]
-                      : "https://placehold.co/160x214?text=No+Img";
+                  const image = Array.isArray(cate.images) && cate.images.length > 0
+                    ? cate.images[0]
+                    : "https://placehold.co/160x214?text=No+Img";
+                  const isActive = filters.categoryId === cate._id;
+
                   return (
                     <div
                       key={cate._id}
-                      className="category-children__item swiper-slide active"
+                      className={`category-children__item swiper-slide ${isActive ? "active" : ""}`}
+                      onClick={() => {
+                        setFilters({ ...filters, categoryId: cate._id });
+                      }}
+                      style={{ cursor: "pointer" }}
                     >
                       <div className="category-children__image">
                         <img src={image} alt={cate.name} width={160} height={214} />
@@ -223,9 +309,7 @@ export default function PublicShop({ shopId }: Props) {
               </div>
             </div>
           </div>
-        ) : (
-          <p>Shop chưa có danh mục nào.</p>
-        ))}
+        ) : <p>Shop chưa có danh mục nào.</p>)}
       </div>
 
       {/* ─── Filter + Products ─── */}

@@ -32,7 +32,7 @@ export default function DetailPage() {
   return (
     <>
       <div className="detail-content">
-        <BreadcumComponent />
+      <BreadcumComponent lastName={product.name} />
         <DetailSection product={product} />
         <div className="title">
           <h2>Sản phẩm liên quan</h2>

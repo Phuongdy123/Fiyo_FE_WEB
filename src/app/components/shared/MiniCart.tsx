@@ -1,7 +1,7 @@
 "use client";
 
 import "@/app/assets/css/checkout.css";
-import "@/app/assets/css/header.css"
+import "@/app/assets/css/header.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/app/context/Ccart";
@@ -97,7 +97,7 @@ export default function MiniCartComponent() {
   const outOfStockProduct = cart.some(item => item.quantity_Product < 1);
 
   const handleCheckout = () => {
-    if (outOfStockProduct) return;
+    if (outOfStockProduct || cart.length === 0) return; // Prevent checkout if cart is empty or has out-of-stock items
     localStorage.setItem("finalTotal", finalTotal.toString());
     window.location.href = user ? "/page/checkout" : "/page/checkoutNoLogin";
   };
@@ -112,6 +112,15 @@ export default function MiniCartComponent() {
             <button className="minicart__close" onClick={close}></button>
           </div>
           <div className="minicart__content">
+            {cart.length === 0 && (
+              <div className="minicart__noti-list">
+                <div className="minicart__noti">
+                  <div className="minicart__noti-text">
+                    Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm để thanh toán.
+                  </div>
+                </div>
+              </div>
+            )}
             {totalPrice >= 100000 ? (
               <div className="minicart__noti-list">
                 <div className="minicart__noti--succes">
@@ -121,14 +130,16 @@ export default function MiniCartComponent() {
                 </div>
               </div>
             ) : (
-              <div className="minicart__noti-list">
-                <div className="minicart__noti">
-                  <div className="minicart__noti-text">
-                    Mua thêm {(100000 - totalPrice).toLocaleString("vi-VN")} ₫
-                    để được miễn phí vận chuyển
+              cart.length > 0 && (
+                <div className="minicart__noti-list">
+                  <div className="minicart__noti">
+                    <div className="minicart__noti-text">
+                      Mua thêm {(100000 - totalPrice).toLocaleString("vi-VN")} ₫
+                      để được miễn phí vận chuyển
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
             )}
 
             <ol className="minicart__items">
@@ -283,8 +294,15 @@ export default function MiniCartComponent() {
               </table>
             </div>
             <div className="minicart__actions">
-              <button className="minicart__actions-button">
-                <a style={{ color: "white" }} onClick={handleCheckout}>
+              <button
+                className="minicart__actions-button"
+                disabled={cart.length === 0 || outOfStockProduct}
+                style={{ opacity: cart.length === 0 || outOfStockProduct ? 0.5 : 1 }}
+              >
+                <a
+                  style={{ color: "white", pointerEvents: cart.length === 0 || outOfStockProduct ? "none" : "auto" }}
+                  onClick={handleCheckout}
+                >
                   Thanh toán
                 </a>
               </button>

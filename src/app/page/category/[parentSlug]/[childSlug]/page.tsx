@@ -24,6 +24,7 @@ const ProductByCatePage: NextPage<{
 
   return (
     <div className="main-content">
+      
       <CategoryProductSection categorybyslug={categorybyslug} />
       <div className="container">
         <div className="columns">

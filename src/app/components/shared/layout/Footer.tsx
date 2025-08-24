@@ -74,7 +74,7 @@ export default function FooterComponent() {
           rel="noreferrer"
         >
           <img
-            src="https://photo.salekit.com/uploads/fchat_5b4872d13803896dd77125af/cach-tao-fanpage-facebook.jpg"
+            src="/images/image.png"
             alt="Fanpage Facebook"
             style={{ maxWidth: 280, height: "auto", borderRadius: 8 }}
           />

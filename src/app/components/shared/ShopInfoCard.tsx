@@ -183,7 +183,7 @@
           <div className="shopCol"><div className="shopLabel">Tỉ Lệ Phản Hồi</div><div className="shopValue">{responseRate}%</div></div>
           <div className="shopCol"><div className="shopLabel">Tham Gia</div><div className="shopValue">{joinedText}</div></div>
           <div className="shopCol"><div className="shopLabel">Sản Phẩm</div><div className="shopValue">{products.toLocaleString("vi-VN")}</div></div>
-          <div className="shopCol"><div className="shopLabel">Thời Gian Phản Hồi</div><div className="shopValue">{responseTimeText}</div></div>
+          <div className="shopCol"><div className="shopLabel">Phản Hồi</div><div className="shopValue">{responseTimeText}</div></div>
           <div className="shopCol"><div className="shopLabel">Người Theo Dõi</div><div className="shopValue">{followers.toLocaleString("vi-VN")}</div></div>
         </div>
       </div>

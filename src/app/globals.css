@@ -1070,6 +1070,9 @@ img {
    
     width: calc(33.3333% - 20px);
   }
+  .toggle{
+    display: none;
+  }
  
  
 }
@@ -1135,6 +1138,7 @@ img {
   .careers-grid {
     grid-template-columns: 1fr 1fr;
   }
+
 }
 
 .job-card {

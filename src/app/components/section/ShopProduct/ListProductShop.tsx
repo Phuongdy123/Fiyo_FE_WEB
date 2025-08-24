@@ -1,9 +1,15 @@
-// /components/shop/ListProductShop.tsx
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { IProduct } from "@/app/untils/IProduct";
 import type { IFilter } from "@/app/untils/IFilter";
 import ProductList from "../../shared/ListProduct";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
+const API_PRODUCTS_BASE = `${API_BASE}/api/products`;
+const API_PRODUCTS_BY_SHOP = (shopId: string) => `${API_PRODUCTS_BASE}/shop/${shopId}`;
+const API_PRODUCTS_BY_SHOP_AND_CATEGORY = (shopId: string, categoryId: string) =>
+  `${API_PRODUCTS_BASE}/shop/${shopId}/category/${categoryId}`;
+const API_FILTER = `${API_PRODUCTS_BASE}/filter`;
 
 const sortMap = {
   "Mới nhất": "newest",
@@ -17,14 +23,16 @@ const reverseSortMap = {
   price_desc: "Giá: cao đến thấp",
 } as const;
 
+type SortKey = keyof typeof reverseSortMap; // "newest" | "price_asc" | "price_desc"
+
 export default function ListProductShop({
   shopId,
   filters,
   onFilterChange,
 }: {
   shopId: string;
-  filters: IFilter;
-  onFilterChange: (next: IFilter) => void;
+  filters: IFilter & { categoryId?: string | null };
+  onFilterChange: (next: IFilter & { categoryId?: string | null }) => void;
 }) {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +41,9 @@ export default function ListProductShop({
   const [sortOpen, setSortOpen] = useState(false);
   const sorterRef = useRef<HTMLDivElement>(null);
 
-  const selectedSort = reverseSortMap[filters.sort ?? "newest"] ?? "Mới nhất";
+  // ✅ đảm bảo filters.sort là SortKey
+  const sortKey: SortKey = (filters.sort as SortKey) || "newest";
+  const selectedSort = reverseSortMap[sortKey];
 
   const handleSortChange = (label: keyof typeof sortMap) => {
     onFilterChange({ ...filters, sort: sortMap[label] });
@@ -53,19 +63,30 @@ export default function ListProductShop({
         setFadeClass("fade-out");
         setLoading(true);
 
-        // 1) Lấy toàn bộ sản phẩm thuộc shop
-        const res = await fetch(`http://localhost:3000/api/products/shop/${shopId}`, {
-          cache: "no-store",
-          signal: ac.signal,
-        });
-        const shopData = await res.json();
-        const allProducts: IProduct[] = Array.isArray(shopData?.products) ? shopData.products : [];
+        // 1) Lấy sản phẩm theo shop (và category nếu có)
+        let sourceProducts: IProduct[] = [];
+
+        if (filters.categoryId) {
+          const res = await fetch(
+            API_PRODUCTS_BY_SHOP_AND_CATEGORY(shopId, String(filters.categoryId)),
+            { cache: "no-store", signal: ac.signal }
+          );
+          const payload = await res.json();
+          sourceProducts = Array.isArray(payload) ? payload : payload?.products ?? [];
+        } else {
+          const res = await fetch(API_PRODUCTS_BY_SHOP(shopId), {
+            cache: "no-store",
+            signal: ac.signal,
+          });
+          const payload = await res.json();
+          sourceProducts = Array.isArray(payload?.products) ? payload.products : [];
+        }
 
         // 2) Lọc ở server qua endpoint filter
-        const response = await fetch("http://localhost:3000/api/products/filter", {
+        const response = await fetch(API_FILTER, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ products: allProducts, filters }),
+          body: JSON.stringify({ products: sourceProducts, filters }),
           signal: ac.signal,
         });
         const data = await response.json();
@@ -79,7 +100,7 @@ export default function ListProductShop({
           }
           setFadeClass("fade-in");
           setLoading(false);
-        }, 200);
+        }, 150);
       } catch (err) {
         if ((err as any)?.name !== "AbortError") {
           console.error("Lỗi khi tải/lọc sản phẩm shop:", err);
@@ -93,7 +114,6 @@ export default function ListProductShop({
     return () => ac.abort();
   }, [shopId, filters]);
 
-  // ẩn sản phẩm bị isHidden
   const visibleProducts = products.filter((p) => p.isHidden !== true);
 
   useEffect(() => {
@@ -111,7 +131,7 @@ export default function ListProductShop({
       <div className="toolbar toolbar-products">
         <div className="toolbar-amount">
           <span>
-            {loading ? "Đang tải sản phẩm..." : `Tổng số ${visibleProducts.length} sản phẩm`}
+            {loading ? "Đang tải sản phẩm..." : `Tất cả sản phẩm`}
           </span>
         </div>
 
