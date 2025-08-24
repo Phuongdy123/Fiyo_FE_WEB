@@ -479,7 +479,7 @@ export default function CheckoutComponent() {
               </form>
 
               <label className="shipping-method__option">
-                <input type="radio" name="shipping-method" checked />
+              <input type="radio" name="shipping-method" defaultChecked />
                 <span className="shipping-method__option-content">
                   <span className="shipping-method__option-info">
                     <b className="shipping-method__option-title">
@@ -672,7 +672,7 @@ export default function CheckoutComponent() {
                   <tfoot>
                     <tr className="khtt">
                       <th>Điểm KHTT</th>
-                      <td>200</td>
+                        <td>{finalTotal}</td>
                     </tr>
                     <tr className="grand-totals">
                       <th>

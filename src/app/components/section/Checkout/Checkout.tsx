@@ -748,7 +748,7 @@ const finalTotal = Math.max(0, total - discountAmount + shippingFee);
                     <tfoot>
                       <tr className="khtt">
                         <th>Điểm KHTT</th>
-                        <td>200</td>
+                        <td>{finalTotal}</td>
                       </tr>
                       <tr className="grand-totals">
                         <th>
