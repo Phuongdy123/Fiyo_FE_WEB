@@ -672,7 +672,7 @@ export default function CheckoutComponent() {
                   <tfoot>
                     <tr className="khtt">
                       <th>Điểm KHTT</th>
-                        <td>{finalTotal}</td>
+                        <td>{finalTotal}</td> 
                     </tr>
                     <tr className="grand-totals">
                       <th>
