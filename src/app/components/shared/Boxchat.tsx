@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import "@/app/assets/css/boxchat.css";
 import { useCart } from "@/app/context/Ccart";
 import type { ICart } from "@/app/untils/ICart";
-
+import { useAuth } from "@/app/context/CAuth"; 
 type CardAction =
   | { type: "add_to_cart"; label: string; productId: string; quantity?: number }
   | { type: "buy_now"; label: string; productId: string; url?: string };
@@ -199,7 +199,23 @@ async function fetchVariantsByProduct(productId: string) {
 
 export default function BoxChatComponent() {
   const { addToCart } = useCart();
+  const { user } = useAuth(); // 👈 lấy user từ context
 
+const getUserId = () => {
+  if (user?._id) return user._id;
+  try {
+    const s = localStorage.getItem("user");
+    if (!s) return null;
+    const u = JSON.parse(s);
+    return u?._id || null;
+  } catch {
+    return null;
+  }
+};
+const goCheckout = () => {
+  const dest = getUserId() ? "/page/checkout" : "/page/checkoutNoLogin";
+  window.location.href = dest;
+};
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
   const emojiBtnRef = useRef<HTMLButtonElement>(null);
@@ -654,11 +670,12 @@ export default function BoxChatComponent() {
         console.log("[Chat:addToCart] item", itemForCart);
 
         addToCart(itemForCart);
+        
         addTextMessage("bot", "🛒 Đã thêm vào giỏ!", true);
 
-        if (action === "buy_now" && url) {
+        if (action === "buy_now") {
           // KHÔNG gắn ?sku=... nữa
-          window.location.href = url;
+          goCheckout(); // 👈 chuyển trang theo trạng thái đăng nhập
         }
         return;
       }
@@ -704,7 +721,7 @@ export default function BoxChatComponent() {
         };
         console.log("[Chat:addToCart] buy-now item-no-variant", item);
         addToCart(item);
-        if (url) window.location.href = url;
+     goCheckout(); // 👈 luôn điều hướng
       }
     }; // đóng onChatListClick
 
