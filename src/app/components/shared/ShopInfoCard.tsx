@@ -1,20 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useUserChat } from "../section/chat/UserChatProvider";
+import { useUserChat } from '../section/chat/UserChatProvider';
 
 /* ==== Types từ API ==== */
 type ShopRating = { average?: number; count?: number };
-type ShopAddressItem = {
-  name?: string;
-  phone?: string;
-  address?: string;   // đường/phường/quận/tỉnh
-  detail?: string;    // số nhà/ngõ
-  type?: string;      // ví dụ: "nhà riêng", "văn phòng"
-  status?: "default" | string;
-};
-type ShopLocation = { address?: string; ward?: string; district?: string; city?: string };
-
 type ShopAPI = {
   _id: string;
   name: string;
@@ -25,11 +15,9 @@ type ShopAPI = {
   followers_count?: number;
   total_products?: number;
   response_rate?: number;
+  response_time_text?: string;
   followers?: any[];
-  // các field địa chỉ có thể có
-  address?: string;
-  location?: ShopLocation;
-  addresses?: ShopAddressItem[];
+  address?: string; // Added address field
 };
 
 /* ==== Helpers ==== */
@@ -48,37 +36,6 @@ function timeAgoVN(iso?: string) {
   return `${y} năm trước`;
 }
 
-/** Gom địa chỉ từ nhiều cấu trúc khác nhau */
-function formatAddress(shop?: Partial<ShopAPI>): string {
-  if (!shop) return "Chưa cập nhật";
-
-  // 1) address: string
-  if (typeof shop.address === "string" && shop.address.trim()) {
-    return shop.address.trim();
-  }
-
-  // 2) location: { address, ward, district, city }
-  const loc = shop.location;
-  if (loc && (loc.address || loc.ward || loc.district || loc.city)) {
-    const parts = [loc.address, loc.ward, loc.district, loc.city]
-      .filter(Boolean)
-      .map((s) => String(s).trim());
-    if (parts.length) return parts.join(", ");
-  }
-
-  // 3) addresses[]: lấy default hoặc phần tử đầu
-  const arr = Array.isArray(shop.addresses) ? shop.addresses : [];
-  if (arr.length) {
-    const def = arr.find((x) => x?.status === "default") || arr[0];
-    const parts = [def?.detail, def?.address, def?.type]
-      .filter(Boolean)
-      .map((s) => String(s).trim());
-    if (parts.length) return parts.join(", ");
-  }
-
-  return "Chưa cập nhật";
-}
-
 /** Chỉ cho phép 1 trong 2: shopId hoặc productId */
 type BaseHandlers = {
   onChat?: (shopId: string) => void;
@@ -92,11 +49,10 @@ export default function ShopInfoCard(props: Props) {
   const { openForShop } = useUserChat();
   const router = useRouter();
   const { onChat, onViewShop } = props;
-
   const [shop, setShop] = useState<ShopAPI | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click";
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const url = useMemo(() => {
     if ("shopId" in props && props.shopId) {
@@ -135,7 +91,7 @@ export default function ShopInfoCard(props: Props) {
           (raw as any).total_products = Number(totalFromOtherKeys);
         }
 
-        // Nếu vẫn chưa có total_products → gọi count API (nếu BE có)
+        // nếu vẫn chưa có total_products → gọi count API (nếu BE có)
         if (raw._id && (raw.total_products == null || isNaN(Number(raw.total_products)))) {
           try {
             const resCount = await fetch(`${BASE_URL}/api/products/count?shop_id=${raw._id}`, {
@@ -147,7 +103,7 @@ export default function ShopInfoCard(props: Props) {
               (raw as any).total_products = Number(j?.count ?? 0);
             }
           } catch {
-            // ignore
+            // nuốt lỗi
           }
         }
 
@@ -186,11 +142,13 @@ export default function ShopInfoCard(props: Props) {
 
   if (!shop) return null;
 
+  const reviews = shop.rating?.count ?? 0;
   const responseRate = shop.response_rate ?? 96;
   const joinedText = timeAgoVN(shop.created_at) || "—";
   const products = Number.isFinite(Number(shop.total_products)) ? Number(shop.total_products) : 0;
+  const responseTimeText = shop.response_time_text ?? "trong vài giờ";
   const followers = shop.followers_count ?? 0;
-  const displayAddress = formatAddress(shop);
+  const address = shop.address ?? "Không có thông tin địa chỉ"; // Fallback for address
 
   return (
     <div className="shopHero">
@@ -204,16 +162,16 @@ export default function ShopInfoCard(props: Props) {
         <div className="shopMeta">
           <div className="shopName">{shop.name}</div>
           <div className="shopOnline">
-            {`Online ${timeAgoVN(shop.updated_at || shop.created_at) || "1 giờ trước"}`}
+            {`Online ${timeAgoVN(shop.updated_at || shop.created_at) || "1 giờ trước"} `}
           </div>
           <div className="shopActions">
-            <button className="shopChatBtn" onClick={() => (onChat ? onChat(shop._id) : openForShop(shop._id))}>
+            <button
+              className="shopChatBtn"
+              onClick={() => openForShop(shop._id)}
+            >
               Chat Ngay
             </button>
-            <button
-              className="shopViewBtn"
-              onClick={() => (onViewShop ? onViewShop(shop._id) : router.push(`/page/shop/${shop._id}`))}
-            >
+            <button className="shopViewBtn" onClick={() => router.push(`/page/shop/${shop._id}`)}>
               Xem Shop
             </button>
           </div>
@@ -223,32 +181,14 @@ export default function ShopInfoCard(props: Props) {
       {/* Right */}
       <div className="shopRight">
         <div className="shopCol">
-          <div className="shopLabel">Đánh Giá</div>
-          <div className="shopValue"><strong>5 ★</strong></div>
+          <div className="shopLabel">Địa chỉ</div>
+          <div className="shopValue">{address}</div>
         </div>
-        <div className="shopCol">
-          <div className="shopLabel">Tỉ Lệ Phản Hồi</div>
-          <div className="shopValue">{responseRate}%</div>
-        </div>
-        <div className="shopCol">
-          <div className="shopLabel">Tham Gia</div>
-          <div className="shopValue">{joinedText}</div>
-        </div>
-        <div className="shopCol">
-          <div className="shopLabel">Sản Phẩm</div>
-          <div className="shopValue">{products.toLocaleString("vi-VN")}</div>
-        </div>
-
-        {/* ==== Thay "Phản Hồi" bằng "Địa Chỉ" ==== */}
-        <div className="shopCol">
-          <div className="shopLabel">Địa Chỉ</div>
-          <div className="shopValue" title={displayAddress}>{displayAddress}</div>
-        </div>
-
-        <div className="shopCol">
-          <div className="shopLabel">Người Theo Dõi</div>
-          <div className="shopValue">{followers.toLocaleString("vi-VN")}</div>
-        </div>
+        <div className="shopCol"><div className="shopLabel">Tỉ Lệ Phản Hồi</div><div className="shopValue">{responseRate}%</div></div>
+        <div className="shopCol"><div className="shopLabel">Tham Gia</div><div className="shopValue">{joinedText}</div></div>
+        <div className="shopCol"><div className="shopLabel">Sản Phẩm</div><div className="shopValue">{products.toLocaleString("vi-VN")}</div></div>
+        <div className="shopCol"><div className="shopLabel">Phản Hồi</div><div className="shopValue">{responseTimeText}</div></div>
+        <div className="shopCol"><div className="shopLabel">Người Theo Dõi</div><div className="shopValue">{followers.toLocaleString("vi-VN")}</div></div>
       </div>
     </div>
   );
