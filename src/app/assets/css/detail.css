@@ -697,5 +697,20 @@ line-height: 0;
 }
 @media (max-width:520px){
   .shopLeft{ min-width:unset; }
-  .shopRight{ grid-template-columns:1fr; }
+  .shopRight{display: none; }
+  .shopName{
+    font-size: 14px;
+    
+  }
+
+  .shopOnline{
+    font-size: 12px;
+  }
+   .shopActions button {
+    height: 26px;
+    padding: 0 6px;
+    font-size: 11px;
+    gap: 4px;
+  }
+ 
 }

@@ -7,183 +7,134 @@ import AccountSiteBar from "@/app/components/shared/AccountSiteBar";
 import { IAddress } from "@/app/untils/IAddress";
 import { addAddress, getAllAddress } from "@/app/services/Address/SAddress";
 
-interface Province {
-  code: string;
-  name: string;
-  type: string;
+/** ==== Chuẩn hoá dữ liệu từ API thành format dùng cho UI ==== */
+type NormProvince = { code: string; name: string };
+type NormWard = { code: string; name: string; province_code: string };
+
+function normalizeProvinces(raw: any): NormProvince[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((p: any) => ({
+      code: String(p?.province_code ?? p?.code ?? p?.id ?? "").trim(),
+      name: String(p?.province_name ?? p?.name ?? p?.full_name ?? "").trim(),
+    }))
+    .filter((x) => x.code && x.name);
 }
 
-interface Ward {
-  code: string;
-  name: string;
-  type: string;
-  province_code: string;
+function normalizeWards(raw: any): NormWard[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((w: any) => ({
+      code: String(w?.ward_code ?? w?.code ?? w?.id ?? "").trim(),
+      name: String(w?.ward_name ?? w?.name ?? w?.full_name ?? "").trim(),
+      province_code: String(w?.province_code ?? w?.parent_code ?? "").trim(),
+    }))
+    .filter((x) => x.code && x.name);
 }
 
 export default function AddressPage() {
-  const VALID_PROVINCE_CODES = [
-    "01",
-    "26",
-    "04",
-    "11",
-    "12",
-    "14",
-    "20",
-    "22",
-    "38",
-    "40",
-    "42",
-    "02",
-    "10",
-    "19",
-    "25",
-    "27",
-    "33",
-    "31",
-    "37",
-    "45",
-    "48",
-    "51",
-    "52",
-    "56",
-    "66",
-    "68",
-    "72",
-    "75",
-    "79",
-    "86",
-    "87",
-    "89",
-    "92",
-    "96",
-  ];
-
   const { user } = useAuth();
   const userId = user?._id;
 
   const [editId, setEditId] = useState<string | null>(null);
   const [addressList, setAddressList] = useState<IAddress[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [wards, setWards] = useState<Ward[]>([]);
-  const [error, setError] = useState<string | null>(null);
+
+  const [provinces, setProvinces] = useState<NormProvince[]>([]);
+  const [wards, setWards] = useState<NormWard[]>([]);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<IAddress>({
     name: "",
     phone: "",
-    address: "",
+    address: "",          // build tự động
     is_default: false,
-    detail: "",
+    detail: "",           // số nhà/đường
     type: "Nhà Riêng",
     user_id: userId || "",
-    province: "",
-    ward: "",
+    province: "",         // lưu province_code
+    ward: "",             // lưu ward_code
   });
 
   const [selectedAddress, setSelectedAddress] = useState({
-    province: "",
-    ward: "",
+    province: "", // province_code
+    ward: "",     // ward_code
   });
 
-  // Fetch provinces from API and filter for 34 provinces
+  /** Lấy Tỉnh/Thành phố (không lọc) */
   useEffect(() => {
-    const fetchProvinces = async () => {
+    (async () => {
       try {
         setError(null);
-        const response = await fetch(
-          "https://tinhthanhpho.com/api/v1/new-provinces",
-          {
-            headers: { Accept: "application/json" },
-          }
-        );
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.success) {
-          const filteredProvinces = data.data
-            .filter((province: Province) =>
-              VALID_PROVINCE_CODES.includes(province.code.padStart(2, "0"))
-            )
-            .map((province: Province) => ({
-              ...province,
-              code: province.code.padStart(2, "0"),
-            }));
-          setProvinces(filteredProvinces);
-        } else {
-          throw new Error("API returned success: false");
-        }
-      } catch (error: any) {
-        console.error("Lỗi khi lấy danh sách tỉnh/thành:", error);
-        setError("Không thể lấy danh sách tỉnh/thành. Vui lòng thử lại sau.");
+        const res = await fetch("https://34tinhthanh.com/api/provinces", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setProvinces(normalizeProvinces(data));
+      } catch (e: any) {
+        console.error("Lỗi provinces:", e);
+        setError("Không thể tải danh sách Tỉnh/Thành.");
+        setProvinces([]);
       }
-    };
-    fetchProvinces();
+    })();
   }, []);
 
-  // Fetch wards from API
+  /** Lấy Phường/Xã theo province_code */
   useEffect(() => {
     if (!selectedAddress.province) {
       setWards([]);
-      setError(null);
       setIsLoadingWards(false);
       return;
     }
-
-    const fetchWards = async () => {
+    (async () => {
       try {
         setError(null);
         setIsLoadingWards(true);
-        const paddedCode = selectedAddress.province.padStart(2, "0");
-        const response = await fetch(
-          `https://tinhthanhpho.com/api/v1/new-provinces/${paddedCode}/wards`,
-          { headers: { Accept: "application/json" } }
+        const res = await fetch(
+          `https://34tinhthanh.com/api/wards?province_code=${encodeURIComponent(
+            selectedAddress.province
+          )}`,
+          { headers: { Accept: "application/json" }, cache: "no-store" }
         );
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data.success) {
-          setWards(data.data || []);
-        } else {
-          throw new Error("API returned success: false");
-        }
-      } catch (error: any) {
-        console.error("Lỗi khi lấy danh sách phường/xã:", error);
-        setError("Không thể lấy danh sách phường/xã. Vui lòng thử lại sau.");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setWards(normalizeWards(data));
+      } catch (e: any) {
+        console.error("Lỗi wards:", e);
+        setError("Không thể tải danh sách Phường/Xã.");
         setWards([]);
       } finally {
         setIsLoadingWards(false);
       }
-    };
-    fetchWards();
+    })();
   }, [selectedAddress.province]);
 
-  // Fetch address list
+  /** Lấy danh sách địa chỉ của user */
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
       try {
         if (!userId) return;
         const result = await getAllAddress(
           `http://localhost:3000/api/address/user/${userId}`
         );
-        console.log("Address List API Response:", result); // Debug the raw data
-        const mappedResult = result.map((item: IAddress) => ({
+        const mapped = result.map((item: IAddress) => ({
           ...item,
           name: item.name || "",
           phone: item.phone || "",
           address: item.address || "",
         }));
-        setAddressList(mappedResult);
-      } catch (error) {
-        console.error("Lỗi khi lấy địa chỉ:", error);
-        setError("Không thể lấy danh sách địa chỉ. Vui lòng thử lại sau.");
+        setAddressList(mapped);
+      } catch (e) {
+        console.error("Lỗi danh sách địa chỉ:", e);
+        setError("Không thể lấy danh sách địa chỉ.");
       }
-    };
-    if (provinces.length > 0) {
-      fetchData();
-    }
-  }, [userId, provinces]);
+    })();
+  }, [userId]);
 
+  /** Modal handlers */
   const openForm = () => {
     setForm({
       name: "",
@@ -227,19 +178,14 @@ export default function AddressPage() {
     setError(null);
   };
 
+  /** Form handlers */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({
-      ...prev,
-      type: e.target.value as "Nhà Riêng" | "Công Ty",
-    }));
+    setForm((prev) => ({ ...prev, type: e.target.value as "Nhà Riêng" | "Công Ty" }));
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -247,66 +193,61 @@ export default function AddressPage() {
     setSelectedAddress((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "province" && { ward: "" }),
+      ...(name === "province" ? { ward: "" } : null),
     }));
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({
-      ...prev,
-      is_default: e.target.checked,
-    }));
-  };
-
+  /** Lưu địa chỉ */
   const handleSave = async () => {
     try {
       const provinceName =
         provinces.find((p) => p.code === selectedAddress.province)?.name || "";
       const wardName =
         wards.find((w) => w.code === selectedAddress.ward)?.name || "";
-      const fullAddress = `${form.detail || ""}, ${wardName}, ${provinceName}`
-        .replace(/, ,/g, ",")
-        .replace(/,$/, "");
 
-      const addressData: IAddress = {
+      const fullAddress = [form.detail?.trim(), wardName, provinceName]
+        .filter(Boolean)
+        .join(", ")
+        .replace(/,\s*,/g, ", ")
+        .replace(/,\s*$/, "");
+
+      const payload: IAddress = {
         ...form,
         address: fullAddress,
-        is_default: form.is_default,
         user_id: userId || "",
-        province: selectedAddress.province,
-        ward: selectedAddress.ward,
+        province: selectedAddress.province, // code
+        ward: selectedAddress.ward,         // code
       };
 
       if (editId) {
         await fetch(`http://localhost:3000/api/address/${editId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(addressData),
+          body: JSON.stringify(payload),
         });
         alert("Cập nhật địa chỉ thành công");
       } else {
-        await addAddress(addressData);
+        await addAddress(payload);
         alert("Thêm địa chỉ thành công");
       }
 
       closeForm();
+
+      // Refresh list
       const result = await getAllAddress(
         `http://localhost:3000/api/address/user/${userId}`
       );
-      const mappedResult = result.map((item: IAddress) => ({
+      const mapped = result.map((item: IAddress) => ({
         ...item,
         name: item.name || "",
         phone: item.phone || "",
         address: item.address || "",
       }));
-      setAddressList(mappedResult);
-    } catch (error: any) {
-      console.error("Lỗi khi lưu địa chỉ:", error);
-      setError(error.message || "Lỗi khi lưu địa chỉ");
+      setAddressList(mapped);
+    } catch (e: any) {
+      console.error("Lỗi khi lưu địa chỉ:", e);
+      setError(e.message || "Lỗi khi lưu địa chỉ");
     }
   };
 
@@ -326,32 +267,19 @@ export default function AddressPage() {
                   addressList.map((item) => (
                     <div className="addresses__item" key={item._id}>
                       <div className="addresses__item-info">
-                        <div className="addresses__item-content">
-                          {item.address}
-                        </div>
+                        <div className="addresses__item-content">{item.address}</div>
                         <div className="addresses__item-top">
-                          <div className="addresses__item-name">
-                            {item.name}
-                          </div>
-                          <div className="addresses__item-phone">
-                            {item.phone}
-                          </div>
+                          <div className="addresses__item-name">{item.name}</div>
+                          <div className="addresses__item-phone">{item.phone}</div>
                         </div>
                       </div>
                       <div className="addresses__item-bottom">
-                        <div className="addresses__item-type">
-                          <span>{item.type}</span>
-                        </div>
+                        <div className="addresses__item-type"><span>{item.type}</span></div>
                         {item.is_default && (
-                          <div className="addresses__item-default">
-                            <span>Địa chỉ mặc định</span>
-                          </div>
+                          <div className="addresses__item-default"><span>Địa chỉ mặc định</span></div>
                         )}
                         <div className="addresses__item-edit">
-                          <span
-                            className="openModal"
-                            onClick={() => openEditForm(item)}
-                          >
+                          <span className="openModal" onClick={() => openEditForm(item)}>
                             Sửa
                           </span>
                         </div>
@@ -363,14 +291,12 @@ export default function AddressPage() {
                 )}
 
                 <div className="account-information__bottom">
-                  <button
-                    className="btn btn-primary btn-add"
-                    onClick={openForm}
-                  >
+                  <button className="btn btn-primary btn-add" onClick={openForm}>
                     Thêm địa chỉ
                   </button>
                 </div>
 
+                {/* Modal thêm/sửa */}
                 <div
                   className={`address-new modal in ${editId ? "edit" : "add"}`}
                   style={{ display: isOpen ? "flex" : "none" }}
@@ -386,6 +312,7 @@ export default function AddressPage() {
                           {editId ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
                         </h4>
                       </div>
+
                       <div className="address-new__body">
                         <div className="address-new__form">
                           <div className="row">
@@ -394,7 +321,7 @@ export default function AddressPage() {
                               <input
                                 type="text"
                                 className="form-control"
-                                placeholder="nhập họ và tên"
+                                placeholder="Nhập họ và tên"
                                 name="name"
                                 onChange={handleChange}
                                 value={form.name || ""}
@@ -406,7 +333,7 @@ export default function AddressPage() {
                               <input
                                 type="text"
                                 className="form-control"
-                                placeholder="nhập số điện thoại"
+                                placeholder="Nhập số điện thoại"
                                 name="phone"
                                 onChange={handleChange}
                                 value={form.phone || ""}
@@ -414,6 +341,7 @@ export default function AddressPage() {
                               />
                             </div>
                           </div>
+
                           <div className="row">
                             <div className="form-group col-sm-6">
                               <label htmlFor="province">Tỉnh / Thành phố</label>
@@ -435,6 +363,7 @@ export default function AddressPage() {
                                 ))}
                               </select>
                             </div>
+
                             <div className="form-group col-sm-6">
                               <label htmlFor="ward">Phường / Xã</label>
                               <select
@@ -447,9 +376,7 @@ export default function AddressPage() {
                                 disabled={!wards.length || isLoadingWards}
                               >
                                 <option value="" disabled>
-                                  {isLoadingWards
-                                    ? "Đang tải..."
-                                    : "Chọn Phường/Xã"}
+                                  {isLoadingWards ? "Đang tải..." : "Chọn Phường/Xã"}
                                 </option>
                                 {wards.map((w) => (
                                   <option key={w.code} value={w.code}>
@@ -459,20 +386,8 @@ export default function AddressPage() {
                               </select>
                             </div>
                           </div>
-                          {editId && (
-                            <div className="form-group">
-                              <label>Địa chỉ hiện tại</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Tòa nhà, số nhà, tên đường"
-                                name="address"
-                                onChange={handleChange}
-                                value={form.address || ""}
-                              />
-                            </div>
-                          )}
 
+                          {/* Chỉ nhập chi tiết số nhà/đường */}
                           <div className="form-group">
                             <label>Địa chỉ chi tiết</label>
                             <input
@@ -502,12 +417,14 @@ export default function AddressPage() {
                               ))}
                             </div>
                           </div>
+
                           <div className="form-checkbox">
                             <input
                               type="checkbox"
                               id="checkbox1"
+                              name="is_default"
                               checked={form.is_default}
-                              onChange={handleCheckboxChange}
+                              onChange={handleChange}
                             />
                             <label htmlFor="checkbox1">
                               <span>Đặt làm địa chỉ mặc định</span>
@@ -515,6 +432,7 @@ export default function AddressPage() {
                           </div>
                         </div>
                       </div>
+
                       <div className="address-new__footer">
                         <button
                           className="address-new__button--save btn btn-primary"
@@ -526,6 +444,7 @@ export default function AddressPage() {
                     </div>
                   </div>
                 </div>
+                {/* /Modal */}
               </span>
             </div>
           </div>

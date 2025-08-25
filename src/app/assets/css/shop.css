@@ -145,3 +145,14 @@
   .shop-hero__avatar{ width:68px; height:68px; }
   .shop-hero__title h2{ font-size:20px; }
 }
+
+@media (max-width: 768px){
+  .shop-hero__stats strong{
+    font-size: 14px;
+    
+  }
+  .shop-hero__actions{
+    justify-self: center !important;
+  }
+
+}
