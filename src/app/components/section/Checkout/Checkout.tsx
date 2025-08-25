@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/app/context/Ccart";
 import { useAuth } from "@/app/context/CAuth";
 import { IVoucher } from "@/app/untils/IVoucher";
@@ -39,13 +39,23 @@ function normalizeWards(raw: any): NormWard[] {
     .filter((x) => x.code && x.name);
 }
 
+/* ===== Idempotency key helper ===== */
+function genIdemKey() {
+  // Trình duyệt mới có crypto.randomUUID; fallback nếu thiếu
+  return (globalThis.crypto && "randomUUID" in globalThis.crypto)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export default function CheckoutComponent() {
+  const [shopNames, setShopNames] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { cart, clearCart } = useCart();
   const { showToast } = useToast();
 
   const userId = user?._id;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const lockRef = useRef(false); // 👈 chống bấm liên tiếp
 
   const formatPrice = (price: number | null | undefined) =>
     typeof price === "number" && !isNaN(price)
@@ -72,7 +82,7 @@ export default function CheckoutComponent() {
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState(""); // "cod" | "vnpay" | "zalopay"
   const [showAddressModal, setShowAddressModal] = useState(false);
 
   const [voucher, setVoucher] = useState<IVoucher | null>(null);
@@ -263,8 +273,9 @@ export default function CheckoutComponent() {
     console.log("Final Total:", finalTotal);
   }, [cart, voucher]);
 
+  /* ====== CHỈ GỌI 1 API /api/orders & redirect trực tiếp payment_url ====== */
   const handleCheckout = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || lockRef.current) return;
 
     if (cart.length === 0) {
       showToast("Không có dữ liệu sản phẩm để thanh toán!", "error");
@@ -284,13 +295,14 @@ export default function CheckoutComponent() {
     }
 
     setIsSubmitting(true);
+    lockRef.current = true;
 
     const data = {
       user_id: user?._id,
       address_id: defaultAddress._id,
       voucher_id: voucher?._id,
       total_price: finalTotal,
-      payment_method: paymentMethod,
+      payment_method: paymentMethod, // "cod" | "vnpay" | "zalopay"
       status_order: "pending",
       products: cart.map((item) => ({
         product_id: item.id,
@@ -299,35 +311,49 @@ export default function CheckoutComponent() {
         quantity: item.quantity,
         image: item.image,
       })),
+      locale: "vn",
     };
 
     try {
       const res = await fetch("http://localhost:3000/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": genIdemKey(), // 👈 chống double submit
+        },
         body: JSON.stringify(data),
       });
+
       const result = await res.json();
 
-      if (result.status) {
-        const orderId = result.order._id;
+      if (!result?.status) {
+        showToast(result?.message || "Đặt hàng không thành công!", "error");
+        return;
+      }
+
+      if (paymentMethod === "cod") {
+        // COD: clear luôn
         sessionStorage.removeItem("selectedVoucher");
         localStorage.removeItem("selectedVoucher");
         clearCart();
-        if (paymentMethod === "vnpay" || paymentMethod === "zalopay") {
-          window.location.href = `/page/payment/${paymentMethod}/${orderId}`;
-        } else {
-          showToast("Đặt hàng thành công!", "success");
-          setTimeout(() => (window.location.href = "/page/order"), 1500);
-        }
+        showToast("Đặt hàng thành công!", "success");
+        setTimeout(() => (window.location.href = "/page/order"), 1200);
+        return;
+      }
+
+      // Online (VNPAY / ZaloPay): redirect trực tiếp sang cổng thanh toán
+      const paymentUrl = result?.payment_url;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
       } else {
-        showToast(result.message || "Đặt hàng không thành công!", "error");
+        showToast("Không lấy được link thanh toán, thử lại sau.", "error");
       }
     } catch (e) {
       console.error("Lỗi khi đặt hàng:", e);
       showToast("Lỗi khi gửi đơn hàng!", "error");
     } finally {
       setIsSubmitting(false);
+      lockRef.current = false;
     }
   };
 
@@ -414,6 +440,28 @@ export default function CheckoutComponent() {
       </div>
     );
   }
+  
+useEffect(() => {
+  async function fetchShops() {
+    const names: Record<string, string> = {};
+    for (const item of cart) {
+      if (item.shop_id && !names[item.shop_id]) {
+        try {
+          const res = await fetch(`http://localhost:3000/api/shop/${item.shop_id}`);
+          const data = await res.json();
+          if (data?.name || data?.shop?.name) {
+            names[item.shop_id] = data.name || data.shop.name;
+          }
+        } catch (e) {
+          console.error("Không lấy được shop:", e);
+        }
+      }
+    }
+    setShopNames(names);
+  }
+  if (cart.length > 0) fetchShops();
+}, [cart]);
+
 
   return (
     <>
@@ -542,11 +590,8 @@ export default function CheckoutComponent() {
                       <div className="checkout-cart__item-name">
                         <a href="#">{item.name}</a>
                       </div>
-                      <div className="checkout-cart__item-options">
-                        <div className="checkout-cart__item-option">
-                          <span>{item.variant}</span>
-                        </div>
-                      </div>
+                      
+                      
                       <div className="checkout-cart__item-options">
                         <div className="checkout-cart__item-option">
                           <span
@@ -564,9 +609,13 @@ export default function CheckoutComponent() {
                           <span className="value">{item.variant}</span>
                         </div>
                       </div>
+                      
                       <div className="checkout-cart__item-option">
                         Kích thước: {item.size}
                       </div>
+                      <div className="checkout-cart__item-name">
+        <b>Shop :</b> {shopNames[item.shop_id] || "Đang tải..."}
+      </div>
                     </div>
                     <div className="checkout-cart__item-qty">
                       Số lượng: x{item.quantity}
@@ -575,7 +624,9 @@ export default function CheckoutComponent() {
                       <div className="checkout-cart__item-price--normal">
                         Đơn giá: {formatPrice(item.price)} ₫
                       </div>
+                      
                     </div>
+                    
                   </div>
                 </div>
               </div>
@@ -968,6 +1019,7 @@ export default function CheckoutComponent() {
                   >
                     <span className="screen-reader-text">Đóng</span>
                   </div>
+
                   <h4 className="modal-coupon__title">Mã ưu đãi</h4>
                 </div>
 
@@ -980,7 +1032,6 @@ export default function CheckoutComponent() {
                         id="promoCode"
                         placeholder="Nhập mã ưu đãi"
                         className="modal-coupon__form-input"
-                        // Hiện đang disable nút "Áp dụng" – dùng danh sách phía dưới
                       />
                     </div>
                     <button disabled id="applyButton" className="modal-coupon__form-add">

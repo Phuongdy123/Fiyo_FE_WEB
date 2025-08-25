@@ -134,8 +134,7 @@ export default function AccountPage() {
     form.append("name", formData.firstName);
     form.append("phone", formData.phoneNumber);
     form.append("email", formData.email);
-    form.append("gender", formData.gender);
-
+    // Không append gender vào FormData để tránh cập nhật giới tính
     if (formData.avatar) {
       form.append("avatar", formData.avatar);
     }
@@ -270,7 +269,7 @@ export default function AccountPage() {
                         id="phoneNumber"
                         className="form-control"
                         defaultValue={onetuser?.phone || user?.phone || ""}
-                        readOnly={!!(onetuser?.phone || user?.phone)} // Chỉ readOnly nếu có giá trị
+                        readOnly={!!(onetuser?.phone || user?.phone)}
                         style={{ outline: "none" }}
                       />
                     </div>
@@ -360,7 +359,7 @@ export default function AccountPage() {
                             name="gender"
                             value="Nam"
                             checked={formData.gender === "Nam"}
-                            onChange={handleInputChange}
+                            disabled
                           />
                           <span>Nam</span>
                         </label>
@@ -370,7 +369,7 @@ export default function AccountPage() {
                             name="gender"
                             value="Nữ"
                             checked={formData.gender === "Nữ"}
-                            onChange={handleInputChange}
+                            disabled
                           />
                           <span>Nữ</span>
                         </label>
@@ -380,7 +379,7 @@ export default function AccountPage() {
                             name="gender"
                             value="Khác"
                             checked={formData.gender === "Khác"}
-                            onChange={handleInputChange}
+                            disabled
                           />
                           <span>Khác</span>
                         </label>
@@ -433,7 +432,7 @@ export default function AccountPage() {
                               phoneNumber: e.target.value,
                             }))
                           }
-                          disabled={!!(onetuser?.phone || user?.phone)} // Disable nếu user đã có sđt lưu trong hệ thống
+                          disabled={!!(onetuser?.phone || user?.phone)}
                           onBlur={handleBlur}
                           style={{ outline: "none" }}
                         />
