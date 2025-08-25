@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { ICategory } from "@/app/untils/ICategory";
 import { IProduct } from "@/app/untils/IProduct";
 import { getProductsByCategoryParent } from "@/app/services/SProduct";
@@ -12,6 +12,10 @@ interface Props {
   onFilterChange: (newFilters: IFilter) => void;
 }
 
+// Helper: khử trùng theo _id
+const uniqueById = (arr: IProduct[]) =>
+  Array.from(new Map(arr.map((p) => [String((p as any)._id), p])).values());
+
 export default function ListProductCate({
   categorybyslug,
   filters,
@@ -22,7 +26,12 @@ export default function ListProductCate({
   const [fadeClass, setFadeClass] = useState("fade-in");
   const sorterRef = useRef<HTMLDivElement>(null);
 
-  const parentCategoryId = categorybyslug[0]._id;
+  // chỉ lấy id ổn định cho deps
+  const parentCategoryId = useMemo(
+    () => categorybyslug?.[0]?._id ?? "",
+    [categorybyslug?.[0]?._id]
+  );
+
   const [sortOpen, setSortOpen] = useState(false);
 
   const sortMap = {
@@ -47,13 +56,17 @@ export default function ListProductCate({
   };
 
   useEffect(() => {
+    if (!parentCategoryId) return;
+
     const fetchFilteredProducts = async () => {
       try {
         setFadeClass("fade-out");
         setLoading(true);
 
+        // lấy tất cả sản phẩm theo parent
         const allProducts = await getProductsByCategoryParent(parentCategoryId);
 
+        // filter ở BE (truyền list + filters)
         const response = await fetch("https://fiyo.click/api/products/filter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -63,15 +76,17 @@ export default function ListProductCate({
         const data = await response.json();
 
         setTimeout(() => {
-          if (data.status) {
-            setProducts(data.data);
+          if (data?.status) {
+            const items: IProduct[] = Array.isArray(data.data) ? data.data : [];
+            // ✅ khử trùng theo _id
+            setProducts(uniqueById(items));
           } else {
             setProducts([]);
-            console.error("Lọc thất bại:", data.message);
+            console.error("Lọc thất bại:", data?.message);
           }
           setFadeClass("fade-in");
           setLoading(false);
-        }, 500);
+        }, 300);
       } catch (err) {
         console.error("Lỗi khi lọc sản phẩm:", err);
         setProducts([]);
@@ -81,14 +96,11 @@ export default function ListProductCate({
     };
 
     fetchFilteredProducts();
-  }, [filters, categorybyslug]);
+  }, [filters, parentCategoryId]); // ✅ dùng id thay vì cả mảng
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        sorterRef.current &&
-        !sorterRef.current.contains(event.target as Node)
-      ) {
+      if (sorterRef.current && !sorterRef.current.contains(event.target as Node)) {
         setSortOpen(false);
       }
     };
@@ -98,10 +110,13 @@ export default function ListProductCate({
     };
   }, []);
 
-  // 🔹 Lọc sản phẩm không bị ẩn
-  const visibleProducts = products.filter(
-    (p) => p.isHidden === false || p.isHidden === undefined
-  );
+  // 🔹 Lọc sản phẩm không ẩn + khử trùng thêm lớp nữa (an toàn)
+  const visibleProducts = useMemo(() => {
+    const base = products.filter(
+      (p) => p.isHidden === false || p.isHidden === undefined
+    );
+    return uniqueById(base);
+  }, [products]);
 
   return (
     <div className="columns__main">
@@ -114,10 +129,7 @@ export default function ListProductCate({
           </span>
         </div>
 
-        <div
-          className={`toolbar-sorter ${sortOpen ? "active" : ""}`}
-          ref={sorterRef}
-        >
+        <div className={`toolbar-sorter ${sortOpen ? "active" : ""}`} ref={sorterRef}>
           <div
             className="toolbar-sorter__action"
             onClick={() => setSortOpen((prev) => !prev)}
@@ -143,11 +155,7 @@ export default function ListProductCate({
 
       <div className="products-grid">
         <div className={`product-items-new-cate ${fadeClass}`}>
-          {loading ? (
-            <p>Đang tải sản phẩm...</p>
-          ) : (
-            <ProductList products={visibleProducts} />
-          )}
+          {loading ? <p>Đang tải sản phẩm...</p> : <ProductList products={visibleProducts} />}
         </div>
       </div>
 
@@ -155,7 +163,7 @@ export default function ListProductCate({
         <div className="toolbar-loadmore">
           <button className="toolbar-loadmore__button">Xem thêm</button>
           <div className="toolbar-loadmore__text">
-            Hiển thị <span>{visibleProducts.length}</span> trên tổng số {" "}
+            Hiển thị <span>{visibleProducts.length}</span> trên tổng số{" "}
             <span>{visibleProducts.length}</span> sản phẩm
           </div>
         </div>
