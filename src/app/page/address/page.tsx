@@ -6,6 +6,7 @@ import LogoutComponent from "../../components/shared/Logout";
 import AccountSiteBar from "@/app/components/shared/AccountSiteBar";
 import { IAddress } from "@/app/untils/IAddress";
 import { addAddress, getAllAddress } from "@/app/services/Address/SAddress";
+import { useToast } from "@/app/context/CToast";
 
 /** ==== Chuẩn hoá dữ liệu từ API thành format dùng cho UI ==== */
 type NormProvince = { code: string; name: string };
@@ -36,6 +37,8 @@ export default function AddressPage() {
   const { user } = useAuth();
   const userId = user?._id;
 
+  const { showToast } = useToast(); // <-- thêm khởi tạo showToast
+
   const [editId, setEditId] = useState<string | null>(null);
   const [addressList, setAddressList] = useState<IAddress[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -48,18 +51,18 @@ export default function AddressPage() {
   const [form, setForm] = useState<IAddress>({
     name: "",
     phone: "",
-    address: "",          // build tự động
+    address: "", // build tự động
     is_default: false,
-    detail: "",           // số nhà/đường
+    detail: "", // số nhà/đường
     type: "Nhà Riêng",
     user_id: userId || "",
-    province: "",         // lưu province_code
-    ward: "",             // lưu ward_code
+    province: "", // lưu province_code
+    ward: "", // lưu ward_code
   });
 
   const [selectedAddress, setSelectedAddress] = useState({
     province: "", // province_code
-    ward: "",     // ward_code
+    ward: "", // ward_code
   });
 
   /** Lấy Tỉnh/Thành phố (không lọc) */
@@ -217,7 +220,7 @@ export default function AddressPage() {
         address: fullAddress,
         user_id: userId || "",
         province: selectedAddress.province, // code
-        ward: selectedAddress.ward,         // code
+        ward: selectedAddress.ward, // code
       };
 
       if (editId) {
@@ -226,10 +229,12 @@ export default function AddressPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        alert("Cập nhật địa chỉ thành công");
+        // alert("Cập nhật địa chỉ thành công");
+        showToast("Cập nhật địa chỉ thành công", "success");
       } else {
         await addAddress(payload);
-        alert("Thêm địa chỉ thành công");
+        // alert("Thêm địa chỉ thành công");
+        showToast("Thêm địa chỉ thành công", "success");
       }
 
       closeForm();
@@ -248,6 +253,7 @@ export default function AddressPage() {
     } catch (e: any) {
       console.error("Lỗi khi lưu địa chỉ:", e);
       setError(e.message || "Lỗi khi lưu địa chỉ");
+      showToast(e?.message || "Lỗi khi lưu địa chỉ", "error"); // thêm toast lỗi (không đổi logic khác)
     }
   };
 
@@ -274,9 +280,13 @@ export default function AddressPage() {
                         </div>
                       </div>
                       <div className="addresses__item-bottom">
-                        <div className="addresses__item-type"><span>{item.type}</span></div>
+                        <div className="addresses__item-type">
+                          <span>{item.type}</span>
+                        </div>
                         {item.is_default && (
-                          <div className="addresses__item-default"><span>Địa chỉ mặc định</span></div>
+                          <div className="addresses__item-default">
+                            <span>Địa chỉ mặc định</span>
+                          </div>
                         )}
                         <div className="addresses__item-edit">
                           <span className="openModal" onClick={() => openEditForm(item)}>
