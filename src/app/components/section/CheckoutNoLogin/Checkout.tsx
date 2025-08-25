@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/app/context/Ccart";
 import { useAuth } from "@/app/context/CAuth";
 import { useToast } from "@/app/context/CToast";
@@ -34,12 +34,22 @@ function normalizeWards(raw: any): Ward[] {
     .filter((x) => x.code && x.name);
 }
 
+/* ===== Idempotency key helper ===== */
+function genIdemKey() {
+  return (globalThis.crypto && "randomUUID" in globalThis.crypto)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export default function CheckoutComponent() {
+    const [shopNames, setShopNames] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { showToast } = useToast();
   const userId = user?._id;
+
   const { cart, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const lockRef = useRef(false); // chống bấm liên tiếp
 
   const total = cart.reduce(
     (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
@@ -63,7 +73,7 @@ export default function CheckoutComponent() {
   const [province, setProvince] = useState("");
   const [ward, setWard] = useState("");
   const [detailAddress, setDetailAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "vnpay">("cod");
 
   // ===== Voucher =====
   const [voucher, setVoucher] = useState<IVoucher | null>(null);
@@ -209,7 +219,7 @@ export default function CheckoutComponent() {
     })();
   }, [province]);
 
-  // Default address + voucher list
+  // Default address + voucher list (nếu user từng lưu)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -237,8 +247,18 @@ export default function CheckoutComponent() {
     if (userId && provinces.length > 0) fetchData();
   }, [userId, provinces]);
 
+  const discountAmount =
+    voucher
+      ? voucher.type === "%"
+        ? Math.round((total * (voucher.value || 0)) / 100)
+        : (voucher.value || 0)
+      : 0;
+
+  const finalTotal = Math.max(0, total - discountAmount);
+
+  /* ====== CHỈ gọi 1 API /api/orders/guess & redirect trực tiếp payment_url ====== */
   const handleCheckout = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || lockRef.current) return;
 
     if (cart.length === 0) {
       showToast("Giỏ hàng trống. Vui lòng thêm sản phẩm để thanh toán!", "error");
@@ -252,19 +272,20 @@ export default function CheckoutComponent() {
 
     if (
       voucher &&
-      (total < (voucher.min_total || 0) || total > (voucher.max_total || Infinity))
+      (total < (voucher.min_total || 0) || total > (voucher.max_total ?? 9e15))
     ) {
       showToast("Mã ưu đãi không áp dụng được cho đơn hàng này!", "error");
       return;
     }
 
     setIsSubmitting(true);
+    lockRef.current = true;
 
     const provinceName = provinces.find((p) => p.code === province)?.name || "";
     const wardName = wards.find((w) => w.code === ward)?.name || "";
     const fullAddress = `${detailAddress}, ${wardName}, ${provinceName}`
-      .replace(/, ,/g, ",")
-      .replace(/,$/, "");
+      .replace(/,\s*,/g, ", ")
+      .replace(/,\s*$/, "");
 
     const address_guess = {
       name,
@@ -273,13 +294,9 @@ export default function CheckoutComponent() {
       address: fullAddress,
       type: "Nhà riêng",
       detail: detailAddress,
-      province, // lưu code
-      ward,     // lưu code
+      province, // code
+      ward,     // code
     };
-
-    const discountAmount =
-      voucher?.type === "%" ? Math.round((total * (voucher.value || 0)) / 100) : (voucher?.value || 0);
-    const finalTotal = Math.max(0, total - (discountAmount || 0));
 
     const body = {
       name,
@@ -287,8 +304,8 @@ export default function CheckoutComponent() {
       address_guess,
       voucher_id: voucher?._id,
       total_price: finalTotal,
-      payment_method: paymentMethod,
-      status_order: "unpending",
+      payment_method: paymentMethod, // "cod" | "vnpay"
+      status_order: "unpending",     // theo quy ước guest
       products: cart.map((item) => ({
         product_id: item.id,
         variant_id: item.variant_id,
@@ -296,36 +313,49 @@ export default function CheckoutComponent() {
         quantity: item.quantity,
         image: item.image,
       })),
+      locale: "vn",
     };
 
     try {
       const res = await fetch("https://fiyo.click/api/orders/guess", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": genIdemKey(), // chống double submit ở BE (khuyến nghị)
+        },
         body: JSON.stringify(body),
       });
+
       const result = await res.json();
 
-      if (result.status) {
-        const orderId = result.order._id;
+      if (!result?.status) {
+        showToast(result?.message || "Đặt hàng thất bại!", "error");
+        return;
+      }
+
+      if (paymentMethod === "cod") {
+        // COD: clear ngay
         clearCart();
         localStorage.removeItem("selectedVoucher");
         sessionStorage.removeItem("selectedVoucher");
         showToast("Đặt hàng thành công!", "success");
+        setTimeout(() => (window.location.href = "/"), 1200);
+        return;
+      }
 
-        if (paymentMethod === "vnpay" || paymentMethod === "momo") {
-          window.location.href = `/page/payment_guess/${paymentMethod}/${orderId}`;
-        } else {
-          setTimeout(() => (window.location.href = "/"), 1500);
-        }
+      // Online (VNPAY): redirect TRỰC TIẾP sang cổng thanh toán
+      const paymentUrl = result?.payment_url;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
       } else {
-        showToast(result.message || "Đặt hàng thất bại!", "error");
+        showToast("Không lấy được link thanh toán, thử lại sau.", "error");
       }
     } catch (e) {
       console.error("Lỗi khi đặt hàng:", e);
       showToast("Lỗi khi gửi đơn hàng!", "error");
     } finally {
       setIsSubmitting(false);
+      lockRef.current = false;
     }
   };
 
@@ -335,14 +365,27 @@ export default function CheckoutComponent() {
     sessionStorage.setItem("selectedVoucher", JSON.stringify(v));
     setShowVoucherModal(false);
   };
+  useEffect(() => {
+  async function fetchShops() {
+    const names: Record<string, string> = {};
+    for (const item of cart) {
+      if (item.shop_id && !names[item.shop_id]) {
+        try {
+          const res = await fetch(`http://localhost:3000/api/shop/${item.shop_id}`);
+          const data = await res.json();
+          if (data?.name || data?.shop?.name) {
+            names[item.shop_id] = data.name || data.shop.name;
+          }
+        } catch (e) {
+          console.error("Không lấy được shop:", e);
+        }
+      }
+    }
+    setShopNames(names);
+  }
+  if (cart.length > 0) fetchShops();
+}, [cart]);
 
-  const discountAmount = voucher
-    ? voucher.type === "%"
-      ? Math.round((total * (voucher.value || 0)) / 100)
-      : (voucher.value || 0)
-    : 0;
-
-  const finalTotal = Math.max(0, total - discountAmount);
 
   return (
     <>
@@ -506,7 +549,7 @@ export default function CheckoutComponent() {
                   value="cod"
                   name="payment-method"
                   checked={paymentMethod === "cod"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  onChange={(e) => setPaymentMethod(e.target.value as "cod")}
                 />
                 <span className="payment-method__option-content">
                   <b className="payment-method__option-title">Thanh toán khi nhận hàng (COD)</b>
@@ -522,7 +565,7 @@ export default function CheckoutComponent() {
                   value="vnpay"
                   name="payment-method"
                   checked={paymentMethod === "vnpay"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  onChange={(e) => setPaymentMethod(e.target.value as "vnpay")}
                 />
                 <span className="payment-method__option-content">
                   <b className="payment-method__option-title">Thanh toán bằng VNPAY</b>
@@ -561,6 +604,9 @@ export default function CheckoutComponent() {
                         </div>
                         <div className="checkout-cart__item-option">Màu: {item.variant}</div>
                         <div className="checkout-cart__item-option">Size: {item.size}</div>
+                        <div className="checkout-cart__item-option">
+        <b>Shop :</b> {shopNames[item.shop_id] || "Đang tải..."}
+      </div>
                       </div>
                       <div className="checkout-cart__item-qty">Số lượng: x {item.quantity}</div>
                       <div className="checkout-cart__item-price">
@@ -607,18 +653,12 @@ export default function CheckoutComponent() {
                 <table>
                   <tbody>
                     <tr>
-                      <th>
-                        <div className="label">Giá trị đơn hàng</div>
-                      </th>
-                      <td>
-                        <div className="price">{formatPrice(total)}</div>
-                      </td>
+                      <th><div className="label">Giá trị đơn hàng</div></th>
+                      <td><div className="price">{formatPrice(total)}</div></td>
                     </tr>
                     {voucher && (
                       <tr>
-                        <th>
-                          <label className="label">Mã ưu đãi đã áp dụng</label>
-                        </th>
+                        <th><label className="label">Mã ưu đãi đã áp dụng</label></th>
                         <td>
                           <div className="price-discount">
                             {voucher.voucher_code} – Giảm{" "}
@@ -628,19 +668,11 @@ export default function CheckoutComponent() {
                       </tr>
                     )}
                     <tr>
-                      <th>
-                        <label className="label">Chiết khấu</label>
-                      </th>
-                      <td>
-                        <div className="price price-discount">
-                          -{formatPrice(discountAmount)}
-                        </div>
-                      </td>
+                      <th><label className="label">Chiết khấu</label></th>
+                      <td><div className="price price-discount">-{formatPrice(discountAmount)}</div></td>
                     </tr>
                     <tr>
-                      <th>
-                        <div className="label">Phí vận chuyển</div>
-                      </th>
+                      <th><div className="label">Phí vận chuyển</div></th>
                       <td className="price">{formatPrice(0)}</td>
                     </tr>
                   </tbody>
@@ -670,6 +702,7 @@ export default function CheckoutComponent() {
                   </tfoot>
                 </table>
               </div>
+
               <div className="checkout-bottom">
                 <div className="grand-totals grand-totals--mb">
                   <div className="grand-totals__label">
@@ -701,6 +734,7 @@ export default function CheckoutComponent() {
                   </div>
                   <h4 className="modal-coupon__title">Mã ưu đãi</h4>
                 </div>
+
                 <div className="modal-coupon__form">
                   <div className="modal-coupon__form-group">
                     <div className="modal-coupon__form-control">
@@ -717,6 +751,7 @@ export default function CheckoutComponent() {
                     </button>
                   </div>
                 </div>
+
                 <div className="modal-coupon__body">
                   <div className="modal-coupon__items">
                     {voucherList.map((item) => (

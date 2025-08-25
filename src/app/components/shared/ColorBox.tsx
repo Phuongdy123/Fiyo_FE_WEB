@@ -16,6 +16,7 @@ export const getColorStyle = (color?: string) => {
   if (lowerColor.includes("tím")) return { backgroundColor: "#dda0dd" };
   if (lowerColor.includes("đỏ")) return { backgroundColor: "#ff0000" };
   if (lowerColor.includes("vàng")) return { backgroundColor: "#ffd700" };
+  if (lowerColor.includes("cam")) return { backgroundColor: "#9c420aff" };
 
   return { backgroundColor: "#cccccc" };
 };
