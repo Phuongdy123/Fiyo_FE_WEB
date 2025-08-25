@@ -47,7 +47,7 @@ export default function FooterComponent() {
         <div className="footer-bottom">
           {[
             {
-              title: "Công ty cổ phần Canifa",
+              title: "Sàn thương mại Fiyo",
               content: (
                 <>
                   <p>

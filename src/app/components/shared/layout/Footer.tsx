@@ -21,7 +21,7 @@ export default function FooterComponent() {
 
   const sections = [
     {
-      title: "Công ty cổ phần Canifa",
+      title: "Sàn thương mại Fiyo",
       content: (
         <>
           <p>

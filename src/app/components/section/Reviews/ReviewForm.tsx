@@ -20,7 +20,7 @@ interface Props {
     rating: number;
     content: string;
     images: File[];
-  }) => void; // tuỳ chọn: thông báo lên cha khi 1 item gửi xong
+  }) => void;
 }
 
 type PerProductForm = { rating: number; content: string; images: File[] };
@@ -63,14 +63,18 @@ export default function SectionReviewForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, products]);
 
-  // Khởi tạo form mặc định cho tất cả sản phẩm: 5 sao + nội dung "Tốt"
+  // Khởi tạo form mặc định cho tất cả sản phẩm: 5 sao + nội dung rỗng
   useEffect(() => {
     if (show && uniqueProducts.length) {
-      const init: Record<string, PerProductForm> = {};
-      uniqueProducts.forEach((p) => {
-        init[p._id] = { rating: 5, content: "Tốt", images: [] };
+      setFormData((prev) => {
+        const init: Record<string, PerProductForm> = { ...prev };
+        uniqueProducts.forEach((p) => {
+          if (!init[p._id]) { // Chỉ khởi tạo nếu chưa có
+            init[p._id] = { rating: 5, content: "", images: [] };
+          }
+        });
+        return init;
       });
-      setFormData(init);
       setErrors({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,10 +98,10 @@ export default function SectionReviewForm({
   ) {
     const fd = new FormData();
     fd.append("product_id", p._id);
-    fd.append("user_id", p.user_id);                 // nếu BE cần user_id
-    fd.append("order_detail_id", p.order_detail_id); // nếu BE cần liên kết order detail
+    fd.append("user_id", p.user_id);
+    fd.append("order_detail_id", p.order_detail_id);
     fd.append("rating", String(v.rating ?? 5));
-    fd.append("content", v.content || "Tốt");
+    fd.append("content", v.content || "Tốt"); // Dùng placeholder nếu rỗng
     (v.images || []).forEach((file) => fd.append("images", file));
 
     const res = await fetch("https://fiyo.click/api/review", {
@@ -120,17 +124,16 @@ export default function SectionReviewForm({
       (p) => !reviewedProducts.includes(p._id)
     );
     if (!toSend.length) {
-      // Không còn gì để gửi
       return;
     }
 
     // Reset lỗi
     const newErrors: Record<string, string> = {};
 
-    // Validate ảnh (<= 5) — ảnh KHÔNG bắt buộc
+    // Validate ảnh (<= 5)
     for (let i = 0; i < toSend.length; i++) {
       const p = toSend[i];
-      const v = formData[p._id] || { rating: 5, content: "Tốt", images: [] };
+      const v = formData[p._id] || { rating: 5, content: "", images: [] };
       if ((v.images?.length || 0) > 5) {
         newErrors[p._id] = "Không được gửi quá 5 ảnh.";
       }
@@ -141,35 +144,28 @@ export default function SectionReviewForm({
 
     setSubmitting(true);
     try {
-      // Gửi lần lượt — đảm bảo BE nhận đủ từng cái
       for (let i = 0; i < toSend.length; i++) {
         const p = toSend[i];
-        const v = formData[p._id] || { rating: 5, content: "Tốt", images: [] };
+        const v = formData[p._id] || { rating: 5, content: "", images: [] };
 
         await postOneReview(p, v);
 
-        // (tuỳ chọn) thông báo cho cha biết 1 item đã gửi xong
         try {
           onSubmit?.({
             productId: p._id,
             rating: v.rating ?? 5,
-            content: v.content || "Tốt",
+            content: v.content || "Tốt", // Dùng placeholder nếu rỗng
             images: v.images || [],
           });
         } catch {
           // ignore
         }
 
-        // đánh dấu đã đánh giá để disable UI phần đó
         setReviewedProducts((prev) => {
           const merged = prev.concat(p._id);
-          // tránh lỗi target ES5 (không dùng spread trên Set)
           return Array.from(new Set(merged));
         });
       }
-
-      // (tuỳ chọn) đóng form sau khi gửi xong tất cả
-      // onClose();
     } finally {
       setSubmitting(false);
     }
@@ -185,7 +181,7 @@ export default function SectionReviewForm({
 
         {uniqueProducts.map((product) => {
           const value =
-            formData[product._id] || { rating: 5, content: "Tốt", images: [] };
+            formData[product._id] || { rating: 5, content: "", images: [] };
           const already = reviewedProducts.includes(product._id);
 
           return (
@@ -233,7 +229,7 @@ export default function SectionReviewForm({
                           [product._id]: {
                             ...(prev[product._id] || {
                               rating: 5,
-                              content: "Tốt",
+                              content: "",
                               images: [],
                             }),
                             rating: v,
@@ -252,7 +248,7 @@ export default function SectionReviewForm({
                 <textarea
                   className="form-control"
                   rows={3}
-                  value={value.content || "Tốt"}
+                  value={value.content}
                   placeholder="Tốt"
                   disabled={already}
                   onChange={(e) =>
@@ -261,7 +257,7 @@ export default function SectionReviewForm({
                       [product._id]: {
                         ...(prev[product._id] || {
                           rating: 5,
-                          content: "Tốt",
+                          content: "",
                           images: [],
                         }),
                         content: e.target.value,
@@ -292,7 +288,7 @@ export default function SectionReviewForm({
                         [product._id]: {
                           ...(prev[product._id] || {
                             rating: 5,
-                            content: "Tốt",
+                            content: "",
                             images: [],
                           }),
                           images: files,
@@ -313,7 +309,6 @@ export default function SectionReviewForm({
           );
         })}
 
-        {/* Nút GỬI CHUNG cho tất cả sản phẩm chưa đánh giá */}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button className="btn-secondary" type="button" onClick={onClose}>
             Hủy
