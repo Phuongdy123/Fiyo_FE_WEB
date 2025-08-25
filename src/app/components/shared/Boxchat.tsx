@@ -298,6 +298,7 @@ const goCheckout = () => {
               { type: "buy_now", label: "Mua ngay", productId: id, url: c.url },
             ];
 
+            
         const pickerHTML = hasVariants
           ? `
        <div class="variant-wrap"

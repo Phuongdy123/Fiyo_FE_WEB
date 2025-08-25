@@ -1,191 +1,255 @@
-  "use client";
-  import { useRouter } from "next/navigation";
-  import { useEffect, useMemo, useState } from "react";
-  import { useUserChat } from '../section/chat/UserChatProvider';
+"use client";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useUserChat } from "../section/chat/UserChatProvider";
 
-  /* ==== Types từ API ==== */
-  type ShopRating = { average?: number; count?: number };
-  type ShopAPI = {
-    _id: string;
-    name: string;
-    avatar?: string;
-    created_at?: string;
-    updated_at?: string;
-    rating?: ShopRating;
-    followers_count?: number;
-    total_products?: number;
-    response_rate?: number;
-    response_time_text?: string;
-    followers?: any[];
-  };
+/* ==== Types từ API ==== */
+type ShopRating = { average?: number; count?: number };
+type ShopAddressItem = {
+  name?: string;
+  phone?: string;
+  address?: string;   // đường/phường/quận/tỉnh
+  detail?: string;    // số nhà/ngõ
+  type?: string;      // ví dụ: "nhà riêng", "văn phòng"
+  status?: "default" | string;
+};
+type ShopLocation = { address?: string; ward?: string; district?: string; city?: string };
 
-  /* ==== Helpers ==== */
-  function timeAgoVN(iso?: string) {
-    if (!iso) return "";
-    const diff = Date.now() - new Date(iso).getTime();
-    const m = Math.floor(diff / 60000);
-    if (m < 60) return `${m} phút trước`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h} giờ trước`;
-    const d = Math.floor(h / 24);
-    if (d < 30) return `${d} ngày trước`;
-    const mo = Math.floor(d / 30);
-    if (mo < 12) return `${mo} tháng trước`;
-    const y = Math.floor(mo / 12);
-    return `${y} năm trước`;
+type ShopAPI = {
+  _id: string;
+  name: string;
+  avatar?: string;
+  created_at?: string;
+  updated_at?: string;
+  rating?: ShopRating;
+  followers_count?: number;
+  total_products?: number;
+  response_rate?: number;
+  followers?: any[];
+  // các field địa chỉ có thể có
+  address?: string;
+  location?: ShopLocation;
+  addresses?: ShopAddressItem[];
+};
+
+/* ==== Helpers ==== */
+function timeAgoVN(iso?: string) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 60) return `${m} phút trước`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} giờ trước`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d} ngày trước`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo} tháng trước`;
+  const y = Math.floor(mo / 12);
+  return `${y} năm trước`;
+}
+
+/** Gom địa chỉ từ nhiều cấu trúc khác nhau */
+function formatAddress(shop?: Partial<ShopAPI>): string {
+  if (!shop) return "Chưa cập nhật";
+
+  // 1) address: string
+  if (typeof shop.address === "string" && shop.address.trim()) {
+    return shop.address.trim();
   }
 
-  /** Chỉ cho phép 1 trong 2: shopId hoặc productId */
-  type BaseHandlers = {
-    onChat?: (shopId: string) => void;
-    onViewShop?: (shopId: string) => void;
-  };
-  type Props =
-    | ({ shopId: string; productId?: never } & BaseHandlers)
-    | ({ productId: string; shopId?: never } & BaseHandlers);
+  // 2) location: { address, ward, district, city }
+  const loc = shop.location;
+  if (loc && (loc.address || loc.ward || loc.district || loc.city)) {
+    const parts = [loc.address, loc.ward, loc.district, loc.city]
+      .filter(Boolean)
+      .map((s) => String(s).trim());
+    if (parts.length) return parts.join(", ");
+  }
 
-  export default function ShopInfoCard(props: Props) {
-    const { openForShop } = useUserChat();
-      const router = useRouter();
-    const { onChat, onViewShop } = props;
-    const [shop, setShop] = useState<ShopAPI | null>(null);
-    const [loading, setLoading] = useState(false);
+  // 3) addresses[]: lấy default hoặc phần tử đầu
+  const arr = Array.isArray(shop.addresses) ? shop.addresses : [];
+  if (arr.length) {
+    const def = arr.find((x) => x?.status === "default") || arr[0];
+    const parts = [def?.detail, def?.address, def?.type]
+      .filter(Boolean)
+      .map((s) => String(s).trim());
+    if (parts.length) return parts.join(", ");
+  }
 
-    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click";
+  return "Chưa cập nhật";
+}
 
-    const url = useMemo(() => {
-      if ("shopId" in props && props.shopId) {
-        return `${BASE_URL}/api/shop/${props.shopId}`;
-      }
-      if ("productId" in props && props.productId) {
-        return `${BASE_URL}/api/shop/by-product/${props.productId}`;
-      }
-      return null;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [BASE_URL, "shopId" in props ? props.shopId : null, "productId" in props ? props.productId : null]);
+/** Chỉ cho phép 1 trong 2: shopId hoặc productId */
+type BaseHandlers = {
+  onChat?: (shopId: string) => void;
+  onViewShop?: (shopId: string) => void;
+};
+type Props =
+  | ({ shopId: string; productId?: never } & BaseHandlers)
+  | ({ productId: string; shopId?: never } & BaseHandlers);
 
-    useEffect(() => {
+export default function ShopInfoCard(props: Props) {
+  const { openForShop } = useUserChat();
+  const router = useRouter();
+  const { onChat, onViewShop } = props;
 
-      if (!url) return;
-      const ctrl = new AbortController();
+  const [shop, setShop] = useState<ShopAPI | null>(null);
+  const [loading, setLoading] = useState(false);
 
-      (async () => {
-        try {
-          setLoading(true);
-          const res = await fetch(url, { cache: "no-store", signal: ctrl.signal });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const json = await res.json();
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click";
 
-          // hỗ trợ nhiều shape: {status, shop} | {status, result} | {data} | object
-          const raw: ShopAPI = json?.shop ?? json?.result ?? json?.data ?? json;
-          if (!raw || !raw._id) throw new Error(json?.message || "Không tìm thấy shop");
-
-          // followers_count fallback
-          if (raw.followers_count == null && Array.isArray(raw.followers)) {
-            (raw as any).followers_count = raw.followers.length;
-          }
-
-          // --- Fallback total_products ---
-          const totalFromOtherKeys = json?.totalProduct ?? json?.product_count ?? json?.products_count ?? null;
-          if (totalFromOtherKeys != null && raw.total_products == null) {
-            (raw as any).total_products = Number(totalFromOtherKeys);
-          }
-
-          // nếu vẫn chưa có total_products → gọi count API (nếu BE có)
-          if (raw._id && (raw.total_products == null || isNaN(Number(raw.total_products)))) {
-            try {
-              const resCount = await fetch(`${BASE_URL}/api/products/count?shop_id=${raw._id}`, {
-                cache: "no-store",
-                signal: ctrl.signal,
-              });
-              if (resCount.ok) {
-                const j = await resCount.json();
-                (raw as any).total_products = Number(j?.count ?? 0);
-              }
-            } catch {
-              // nuốt lỗi
-            }
-          }
-
-          setShop(raw);
-        } catch (e: any) {
-          if (e?.name !== "AbortError") {
-            console.error("ShopInfoCard fetch error:", e);
-            setShop(null);
-          }
-        } finally {
-          setLoading(false);
-        }
-      })();
-
-      return () => ctrl.abort();
-    }, [url, BASE_URL]);
-
-    if (loading) {
-      return (
-        <div className="shopHero">
-          <div className="shopLeft">
-            <div className="shopAvatar" />
-            <div className="shopMeta">
-              <div className="shopName">Đang tải shop...</div>
-              <div className="shopOnline">—</div>
-              <div className="shopActions">
-                <button className="shopChatBtn" disabled>Chat Ngay</button>
-                <button className="shopViewBtn" disabled>Xem Shop</button>
-              </div>
-            </div>
-          </div>
-          <div className="shopRight" />
-        </div>
-      );
+  const url = useMemo(() => {
+    if ("shopId" in props && props.shopId) {
+      return `${BASE_URL}/api/shop/${props.shopId}`;
     }
+    if ("productId" in props && props.productId) {
+      return `${BASE_URL}/api/shop/by-product/${props.productId}`;
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [BASE_URL, "shopId" in props ? props.shopId : null, "productId" in props ? props.productId : null]);
 
-    if (!shop) return null;
+  useEffect(() => {
+    if (!url) return;
+    const ctrl = new AbortController();
 
-    const reviews = shop.rating?.count ?? 0;
-    const responseRate = shop.response_rate ?? 96;
-    const joinedText = timeAgoVN(shop.created_at) || "—";
-    const products = Number.isFinite(Number(shop.total_products)) ? Number(shop.total_products) : 0;
-    const responseTimeText = shop.response_time_text ?? "trong vài giờ";
-    const followers = shop.followers_count ?? 0;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(url, { cache: "no-store", signal: ctrl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
 
+        // hỗ trợ nhiều shape: {status, shop} | {status, result} | {data} | object
+        const raw: ShopAPI = json?.shop ?? json?.result ?? json?.data ?? json;
+        if (!raw || !raw._id) throw new Error(json?.message || "Không tìm thấy shop");
+
+        // followers_count fallback
+        if (raw.followers_count == null && Array.isArray(raw.followers)) {
+          (raw as any).followers_count = raw.followers.length;
+        }
+
+        // --- Fallback total_products ---
+        const totalFromOtherKeys = json?.totalProduct ?? json?.product_count ?? json?.products_count ?? null;
+        if (totalFromOtherKeys != null && raw.total_products == null) {
+          (raw as any).total_products = Number(totalFromOtherKeys);
+        }
+
+        // Nếu vẫn chưa có total_products → gọi count API (nếu BE có)
+        if (raw._id && (raw.total_products == null || isNaN(Number(raw.total_products)))) {
+          try {
+            const resCount = await fetch(`${BASE_URL}/api/products/count?shop_id=${raw._id}`, {
+              cache: "no-store",
+              signal: ctrl.signal,
+            });
+            if (resCount.ok) {
+              const j = await resCount.json();
+              (raw as any).total_products = Number(j?.count ?? 0);
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        setShop(raw);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          console.error("ShopInfoCard fetch error:", e);
+          setShop(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => ctrl.abort();
+  }, [url, BASE_URL]);
+
+  if (loading) {
     return (
       <div className="shopHero">
-        {/* Left */}
         <div className="shopLeft">
-          <img
-            className="shopAvatar"
-            src={shop.avatar || "https://placehold.co/96x96?text=Shop"}
-            alt={shop.name}
-          />
+          <div className="shopAvatar" />
           <div className="shopMeta">
-            <div className="shopName">{shop.name}</div>
-            <div className="shopOnline">
-              {`Online ${timeAgoVN(shop.updated_at || shop.created_at) || "1 giờ trước"}`}
-            </div>
+            <div className="shopName">Đang tải shop...</div>
+            <div className="shopOnline">—</div>
             <div className="shopActions">
-          <button
-          className="shopChatBtn"
-          onClick={() => openForShop(shop._id)}
-        >
-          Chat Ngay
-        </button>
-  <button className="shopViewBtn" onClick={() => router.push(`/page/shop/${shop._id}`)}>
-    Xem Shop
-  </button>    
-        </div>
+              <button className="shopChatBtn" disabled>Chat Ngay</button>
+              <button className="shopViewBtn" disabled>Xem Shop</button>
+            </div>
           </div>
         </div>
-
-        {/* Right */}
-        <div className="shopRight">
-          <div className="shopCol"><div className="shopLabel">Đánh Giá</div><div className="shopValue">  <strong>5 ★</strong></div></div>
-          <div className="shopCol"><div className="shopLabel">Tỉ Lệ Phản Hồi</div><div className="shopValue">{responseRate}%</div></div>
-          <div className="shopCol"><div className="shopLabel">Tham Gia</div><div className="shopValue">{joinedText}</div></div>
-          <div className="shopCol"><div className="shopLabel">Sản Phẩm</div><div className="shopValue">{products.toLocaleString("vi-VN")}</div></div>
-          <div className="shopCol"><div className="shopLabel">Phản Hồi</div><div className="shopValue">{responseTimeText}</div></div>
-          <div className="shopCol"><div className="shopLabel">Người Theo Dõi</div><div className="shopValue">{followers.toLocaleString("vi-VN")}</div></div>
-        </div>
+        <div className="shopRight" />
       </div>
     );
   }
+
+  if (!shop) return null;
+
+  const responseRate = shop.response_rate ?? 96;
+  const joinedText = timeAgoVN(shop.created_at) || "—";
+  const products = Number.isFinite(Number(shop.total_products)) ? Number(shop.total_products) : 0;
+  const followers = shop.followers_count ?? 0;
+  const displayAddress = formatAddress(shop);
+
+  return (
+    <div className="shopHero">
+      {/* Left */}
+      <div className="shopLeft">
+        <img
+          className="shopAvatar"
+          src={shop.avatar || "https://placehold.co/96x96?text=Shop"}
+          alt={shop.name}
+        />
+        <div className="shopMeta">
+          <div className="shopName">{shop.name}</div>
+          <div className="shopOnline">
+            {`Online ${timeAgoVN(shop.updated_at || shop.created_at) || "1 giờ trước"}`}
+          </div>
+          <div className="shopActions">
+            <button className="shopChatBtn" onClick={() => (onChat ? onChat(shop._id) : openForShop(shop._id))}>
+              Chat Ngay
+            </button>
+            <button
+              className="shopViewBtn"
+              onClick={() => (onViewShop ? onViewShop(shop._id) : router.push(`/page/shop/${shop._id}`))}
+            >
+              Xem Shop
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right */}
+      <div className="shopRight">
+        <div className="shopCol">
+          <div className="shopLabel">Đánh Giá</div>
+          <div className="shopValue"><strong>5 ★</strong></div>
+        </div>
+        <div className="shopCol">
+          <div className="shopLabel">Tỉ Lệ Phản Hồi</div>
+          <div className="shopValue">{responseRate}%</div>
+        </div>
+        <div className="shopCol">
+          <div className="shopLabel">Tham Gia</div>
+          <div className="shopValue">{joinedText}</div>
+        </div>
+        <div className="shopCol">
+          <div className="shopLabel">Sản Phẩm</div>
+          <div className="shopValue">{products.toLocaleString("vi-VN")}</div>
+        </div>
+
+        {/* ==== Thay "Phản Hồi" bằng "Địa Chỉ" ==== */}
+        <div className="shopCol">
+          <div className="shopLabel">Địa Chỉ</div>
+          <div className="shopValue" title={displayAddress}>{displayAddress}</div>
+        </div>
+
+        <div className="shopCol">
+          <div className="shopLabel">Người Theo Dõi</div>
+          <div className="shopValue">{followers.toLocaleString("vi-VN")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}

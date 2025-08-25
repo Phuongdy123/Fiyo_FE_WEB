@@ -1010,6 +1010,69 @@ img {
 .toolbar-sorter__content{
     min-width: 180px;
 }
+.category-title-shop{
+    font-size: 18px;
+}
+
+  .category-children {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 8px !important;
+    scroll-snap-type: x mandatory !important;
+  }
+  .category-children::-webkit-scrollbar { display: none !important; }
+
+  /* Hàng item cuộn ngang, co theo nội dung */
+  .category-children .swiper-wrapper,
+  .category-children__content {
+    display: flex !important;
+    gap: 4px !important;
+    width: max-content !important;
+  }
+
+  /* Gỡ width % cũ làm item nhỏ, chuyển sang kích thước cố định */
+  .category-children__item,
+  .category-children__item.swiper-slide {
+    width: 200px!important;
+    flex: 0 0 auto !important;
+    scroll-snap-align: start !important;
+    text-align: center !important;
+  }
+
+  /* TĂNG kích thước ảnh */
+  .category-children__image {
+    width: 100% !important;          /* chỉnh 88/104/112 tùy ý */
+    height: 300px !important;
+    padding-bottom: 0 !important;    /* bỏ padding-aspect cũ */
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    margin-bottom: 6px !important;
+    position: relative !important;
+  }
+  .category-children__image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Label to, tối đa 2 dòng */
+  .category-children__label {
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    max-width: 120px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  /* Ẩn nút prev/next nếu có để không che nội dung */
+  .category-children .swiper-button-prev,
+  .category-children .swiper-button-next {
+    display: none !important;
+  }
 }
 
 .filter__apply {
