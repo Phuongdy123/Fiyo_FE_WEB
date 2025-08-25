@@ -371,7 +371,7 @@ export default function CheckoutComponent() {
     for (const item of cart) {
       if (item.shop_id && !names[item.shop_id]) {
         try {
-          const res = await fetch(`http://localhost:3000/api/shop/${item.shop_id}`);
+          const res = await fetch(`https://fiyo.click/api/shop/${item.shop_id}`);
           const data = await res.json();
           if (data?.name || data?.shop?.name) {
             names[item.shop_id] = data.name || data.shop.name;
