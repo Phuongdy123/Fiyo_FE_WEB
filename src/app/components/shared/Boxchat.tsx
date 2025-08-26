@@ -242,7 +242,7 @@ const goCheckout = () => {
     msg.className = `chat-item ${sender === "user" ? "visitor" : "bot"}`;
     const avatarHTML =
       sender === "bot"
-        ? `<div class="avatar-name-msg-item"><div><span class="ant-avatar messages-item-avatar ant-avatar-circle ant-avatar-image" style="width: 32px; height: 32px; line-height: 32px; font-size: 18px"><img src="https://api.oncustomer.canifa.com/user/file/10dbc370-8b4b-11ee-bcfa-1bc0639711b2.png" /></span></div><div class="agent-name">FIYO BOT</div></div>`
+        ? `<div class="avatar-name-msg-item"><div><span class="ant-avatar messages-item-avatar ant-avatar-circle ant-avatar-image" style="width: 32px; height: 32px; line-height: 32px; font-size: 18px"><img src="https://cb-electronics.com/wp-content/uploads/2021/04/istockphoto-1221348467-612x612-1.jpeg" /></span></div><div class="agent-name">FIYO BOT</div></div>`
         : "";
 
     msg.innerHTML = `
