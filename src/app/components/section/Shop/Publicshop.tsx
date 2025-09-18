@@ -21,7 +21,7 @@ interface ICategory {
 
 type Props = { shopId: string };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com";
 const API_SHOP_DETAIL = (id: string) => `${API_BASE}/api/shop/${id}`;
 const API_CATEGORY_BY_SHOP = (id: string) => `${API_BASE}/api/category/shop/${id}`;
 const API_FOLLOW_BASE = `${API_BASE}/api/shop`;

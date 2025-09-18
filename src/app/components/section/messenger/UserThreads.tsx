@@ -18,7 +18,7 @@ export default function UserThreads({
   selectedThreadId,                       // (optional) để highlight
   refreshKey = 0,                         // 🔁 đổi key -> refetch
   pollMs = 0,                             // (optional) auto-refresh theo ms (0 = off)
-  apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click",
+  apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com",
 }: {
   userId: string;
   onPickThread: (threadId: string) => void;

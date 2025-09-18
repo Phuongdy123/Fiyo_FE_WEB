@@ -15,7 +15,7 @@ export default function ChatBox({
   threadId,
   currentUserId,
   role, // "user" | "seller"
-  apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click",
+  apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com",
   useDetailed = false,
   onRead,
   pollMs = 3000,

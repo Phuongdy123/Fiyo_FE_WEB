@@ -18,7 +18,7 @@ type Msg = {
 export default function ShopChatWidget({
   threadId,
   currentUserId,
-  apiBase = "https://fiyo.click",
+  apiBase = "https://fiyo-be.onrender.com",
   pollMs = 3000,
   markReadEnabled = true,
   isActive = true,

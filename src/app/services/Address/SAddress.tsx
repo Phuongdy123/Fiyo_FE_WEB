@@ -1,7 +1,7 @@
 import { IAddress } from "@/app/untils/IAddress";
 
 export const addAddress = async (data: IAddress): Promise<IAddress> => {
-  const res = await fetch("https://fiyo.click/api/address/create", {
+  const res = await fetch("https://fiyo-be.onrender.com/api/address/create", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

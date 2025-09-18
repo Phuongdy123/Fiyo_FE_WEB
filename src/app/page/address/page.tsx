@@ -121,7 +121,7 @@ export default function AddressPage() {
       try {
         if (!userId) return;
         const result = await getAllAddress(
-          `https://fiyo.click/api/address/user/${userId}`
+          `https://fiyo-be.onrender.com/api/address/user/${userId}`
         );
         const mapped = result.map((item: IAddress) => ({
           ...item,
@@ -224,7 +224,7 @@ export default function AddressPage() {
       };
 
       if (editId) {
-        await fetch(`https://fiyo.click/api/address/${editId}`, {
+        await fetch(`https://fiyo-be.onrender.com/api/address/${editId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -241,7 +241,7 @@ export default function AddressPage() {
 
       // Refresh list
       const result = await getAllAddress(
-        `https://fiyo.click/api/address/user/${userId}`
+        `https://fiyo-be.onrender.com/api/address/user/${userId}`
       );
       const mapped = result.map((item: IAddress) => ({
         ...item,

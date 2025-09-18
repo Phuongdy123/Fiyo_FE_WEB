@@ -67,7 +67,7 @@ export default function ListProductCate({
         const allProducts = await getProductsByCategoryParent(parentCategoryId);
 
         // filter ở BE (truyền list + filters)
-        const response = await fetch("https://fiyo.click/api/products/filter", {
+        const response = await fetch("https://fiyo-be.onrender.com/api/products/filter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ products: allProducts, filters }),

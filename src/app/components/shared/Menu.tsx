@@ -13,9 +13,9 @@ type Category = {
   __v?: number;
 };
 
-const PARENTS_API = "https://fiyo.click/api/category/parents";
+const PARENTS_API = "https://fiyo-be.onrender.com/api/category/parents";
 const CHILDREN_API = (parentId: string) =>
-  `https://fiyo.click/api/category/children/${parentId}`;
+  `https://fiyo-be.onrender.com/api/category/children/${parentId}`;
 
 const norm = (s?: string | null) => (s || "").toLowerCase().trim();
 

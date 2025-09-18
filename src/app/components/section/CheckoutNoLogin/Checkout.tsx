@@ -226,7 +226,7 @@ export default function CheckoutComponent() {
         if (!userId) return;
 
         const def = await getDefaultAddress(
-          `https://fiyo.click/api/address/user/${userId}`
+          `https://fiyo-be.onrender.com/api/address/user/${userId}`
         );
         if (def) {
           setProvince(def.province || "");
@@ -237,7 +237,7 @@ export default function CheckoutComponent() {
           setMail(def.email || "");
         }
 
-        const vouchers = await getAllVoucher("https://fiyo.click/api/voucher");
+        const vouchers = await getAllVoucher("https://fiyo-be.onrender.com/api/voucher");
         setVoucherList(vouchers);
       } catch (e) {
         console.error("Lỗi khi load dữ liệu:", e);
@@ -317,7 +317,7 @@ export default function CheckoutComponent() {
     };
 
     try {
-      const res = await fetch("https://fiyo.click/api/orders/guess", {
+      const res = await fetch("https://fiyo-be.onrender.com/api/orders/guess", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -371,7 +371,7 @@ export default function CheckoutComponent() {
     for (const item of cart) {
       if (item.shop_id && !names[item.shop_id]) {
         try {
-          const res = await fetch(`https://fiyo.click/api/shop/${item.shop_id}`);
+          const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${item.shop_id}`);
           const data = await res.json();
           if (data?.name || data?.shop?.name) {
             names[item.shop_id] = data.name || data.shop.name;

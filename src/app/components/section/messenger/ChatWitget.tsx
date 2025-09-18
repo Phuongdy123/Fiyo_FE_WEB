@@ -19,7 +19,7 @@ export default function ChatWidget({
   threadId,
   currentUserId,
   role,
-  apiBase = "https://fiyo.click",
+  apiBase = "https://fiyo-be.onrender.com",
   pollMs = 3000,
   markReadEnabled = true,
   isActive = true,

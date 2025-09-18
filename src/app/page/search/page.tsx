@@ -48,7 +48,7 @@ function SearchContent() {
 
     // Lọc qua API filter nếu có filter đang bật
     if (isFilterActive(filter)) {
-      const filterRes = await fetch("https://fiyo.click/api/products/filter", {
+      const filterRes = await fetch("https://fiyo-be.onrender.com/api/products/filter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ products: list, filters: filter }),
@@ -63,7 +63,7 @@ function SearchContent() {
   const fetchData = async () => {
     try {
       const res = await fetch(
-        `https://fiyo.click/api/products/search?name=${keyword}`
+        `https://fiyo-be.onrender.com/api/products/search?name=${keyword}`
       );
       const data = await res.json();
 

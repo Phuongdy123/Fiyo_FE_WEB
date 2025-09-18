@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com";
 
 type ShopInfo = { _id: string; name: string; avatar?: string };
 

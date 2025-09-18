@@ -46,7 +46,7 @@ export default function DetailSection({ product }: { product: IProduct }) {
   useEffect(() => {
     async function fetchVariants() {
       try {
-        const response = await fetch(`https://fiyo.click/api/variant/products/${product._id}`);
+        const response = await fetch(`https://fiyo-be.onrender.com/api/variant/products/${product._id}`);
         const data: IProductVariant[] = await response.json();
         const variants = data[0]?.variants || [];
         setProductVariants(variants);

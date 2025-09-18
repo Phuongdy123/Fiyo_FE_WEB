@@ -37,7 +37,7 @@ export default function ProductFlashSaleSection({
 
       while (temp.length < limit) {
         const res = await fetch(
-          `https://fiyo.click/api/products/pro?page=${pageCursor}&limit=${limit}`,
+          `https://fiyo-be.onrender.com/api/products/pro?page=${pageCursor}&limit=${limit}`,
           { cache: "no-store" }
         );
         const data = await res.json();
@@ -73,7 +73,7 @@ export default function ProductFlashSaleSection({
         temp = [];
         while (temp.length < limit) {
           const resAll = await fetch(
-            `https://fiyo.click/api/products/pro?page=${pageCursor}&limit=${limit}`,
+            `https://fiyo-be.onrender.com/api/products/pro?page=${pageCursor}&limit=${limit}`,
             { cache: "no-store" }
           );
           const dataAll = await resAll.json();

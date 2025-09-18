@@ -52,7 +52,7 @@ export default function ShopInfoCard(props: Props) {
   const [shop, setShop] = useState<ShopAPI | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fiyo.click";
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fiyo-be.onrender.com";
 
   const url = useMemo(() => {
     if ("shopId" in props && props.shopId) {

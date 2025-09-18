@@ -229,7 +229,7 @@ export default function CheckoutComponent() {
     const fetchData = async () => {
       try {
         const def = await getDefaultAddress(
-          `https://fiyo.click/api/address/user/${userId}`
+          `https://fiyo-be.onrender.com/api/address/user/${userId}`
         );
         if (def) {
           setDefaultAddress(def);
@@ -240,7 +240,7 @@ export default function CheckoutComponent() {
         }
 
         const all = await getAllAddress(
-          `https://fiyo.click/api/address/user/${userId}`
+          `https://fiyo-be.onrender.com/api/address/user/${userId}`
         );
         setAddressList(all);
 
@@ -315,7 +315,7 @@ export default function CheckoutComponent() {
     };
 
     try {
-      const res = await fetch("https://fiyo.click/api/orders", {
+      const res = await fetch("https://fiyo-be.onrender.com/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -402,7 +402,7 @@ export default function CheckoutComponent() {
       setShowNewAddressModal(false);
 
       const updated = await getAllAddress(
-        `https://fiyo.click/api/address/user/${userId}`
+        `https://fiyo-be.onrender.com/api/address/user/${userId}`
       );
       setAddressList(updated);
 
@@ -447,7 +447,7 @@ useEffect(() => {
     for (const item of cart) {
       if (item.shop_id && !names[item.shop_id]) {
         try {
-          const res = await fetch(`https://fiyo.click/api/shop/${item.shop_id}`);
+          const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${item.shop_id}`);
           const data = await res.json();
           if (data?.name || data?.shop?.name) {
             names[item.shop_id] = data.name || data.shop.name;

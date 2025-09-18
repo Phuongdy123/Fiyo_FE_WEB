@@ -19,7 +19,7 @@ type Rating = number | { average: number; count: number };
 type Props = { userId: string };
 
 // ====== CONFIG CƠ BẢN ======
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com";
 // Đổi thành `${API_BASE}/api/shop` nếu backend mount là /api/shop
 const SHOPS_API = `${API_BASE}/api/shop`;
 

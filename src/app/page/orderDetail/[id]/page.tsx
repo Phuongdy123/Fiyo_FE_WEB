@@ -35,7 +35,7 @@ export default function AccountPage({
         setOrderDetail(null);
 
         const res = await fetch(
-          `https://fiyo.click/api/orderDetail/order-shops/${id}/details`,
+          `https://fiyo-be.onrender.com/api/orderDetail/order-shops/${id}/details`,
           { cache: "no-store" }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -138,7 +138,7 @@ export default function AccountPage({
       formData.append("order_detail_id", order_detail_id);
       images.forEach((file) => formData.append("images", file));
 
-      const res = await fetch("https://fiyo.click/api/review", {
+      const res = await fetch("https://fiyo-be.onrender.com/api/review", {
         method: "POST",
         body: formData,
       });

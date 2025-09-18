@@ -101,7 +101,7 @@ export default function AccountPage() {
 
         // 1) Lấy danh sách ĐƠN CHA của user
         const res = await fetch(
-          `https://fiyo.click/api/orders/user/${userId}`,
+          `https://fiyo-be.onrender.com/api/orders/user/${userId}`,
           { cache: "no-store", signal: abortRef.current.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -125,7 +125,7 @@ export default function AccountPage() {
         //    => nhanh hơn rất nhiều so với for/await tuần tự
         const calls = sorted.map((o) =>
           fetch(
-            `https://fiyo.click/api/orderShop/order/${o._id}?page=1&limit=50`,
+            `https://fiyo-be.onrender.com/api/orderShop/order/${o._id}?page=1&limit=50`,
             { cache: "no-store", signal: abortRef.current?.signal }
           )
             .then(async (r) => {

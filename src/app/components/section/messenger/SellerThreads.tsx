@@ -18,7 +18,7 @@ export default function SellerThreads({
   selectedThreadId,                      // (optional) để highlight
   refreshKey = 0,                        // 🔁 key đổi -> refetch
   pollMs = 0,                            // (optional) auto refresh mỗi X ms (0 = off)
-  apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo.click",
+  apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://fiyo-be.onrender.com",
 }: {
   sellerUserId: string;
   onPickThread: (threadId: string) => void;

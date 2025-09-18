@@ -141,7 +141,7 @@ export default function AccountPage() {
 
     try {
       const res = await fetch(
-        `https://fiyo.click/api/user/update/${user?._id}`,
+        `https://fiyo-be.onrender.com/api/user/update/${user?._id}`,
         {
           method: "PATCH",
           body: form,
