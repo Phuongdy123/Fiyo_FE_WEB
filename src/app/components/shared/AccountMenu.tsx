@@ -20,8 +20,12 @@ export default function AccountMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const go = (url: string) => {
-    router.push(url);
+  const go = (url: string, external = false) => {
+    if (external) {
+      window.location.href = url; // điều hướng sang domain khác
+    } else {
+      router.push(url);
+    }
     setOpen(false);
   };
 
@@ -34,7 +38,6 @@ export default function AccountMenu() {
       }`}
       ref={ref}
     >
-      {/* Nút bấm hiển thị giống hệt <Link> cũ */}
       <div
         className="header__icon-account header__icon-account--mobile header__icon"
         style={{ cursor: "pointer" }}
@@ -43,7 +46,6 @@ export default function AccountMenu() {
         <span>Tài khoản</span>
       </div>
 
-      {/* Popup xổ xuống */}
       {open && (
         <div className="accm__popup">
           {!user ? (
@@ -66,14 +68,17 @@ export default function AccountMenu() {
                   <a onClick={() => go("/page/shop/shop-infor")} className="accm__item">
                     <i className="fas fa-store"></i> Cửa hàng của bạn
                   </a>
-                  <a onClick={() => go("/admin/shop")} className="accm__item">
+                  <a onClick={() => go("https://admin.fiyo.click/shop", true)} className="accm__item">
                     <i className="fas fa-sitemap"></i> Quản trị Shop
                   </a>
                 </>
               )}
 
               {user.role === 0 && (
-                <a onClick={() => go("/admin")} className="accm__item">
+                <a
+                  onClick={() => go("https://admin.fiyo.click/", true)}
+                  className="accm__item"
+                >
                   <i className="fas fa-shield-alt"></i> Quản trị Admin
                 </a>
               )}
