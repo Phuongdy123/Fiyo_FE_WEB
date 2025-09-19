@@ -6,53 +6,39 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import Cookies from "js-cookie";
 import { IUser } from "../untils/IUser";
-
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 interface AuthContextType {
   user: IUser | null;
-  loginUser: (userData: IUser, token: string) => void;
+  loginUser: (userData: IUser) => void;
   logoutUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Provider
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<IUser | null>(null);
 
+  // Khi app load lại, lấy user từ localStorage
   useEffect(() => {
-    // 🔑 Ưu tiên lấy từ cookie (token share cross-domain)
-    const token = Cookies.get("token");
     const storedUser = localStorage.getItem("user");
-
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    // nếu cần thì verify token qua API
-    // fetch("/api/verify", { headers: { Authorization: `Bearer ${token}` } })
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  const loginUser = (userData: IUser, token: string) => {
+  const loginUser = (userData: IUser) => {
     setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-
-    // lưu token vào cookie chung
-    Cookies.set("token", token, {
-      domain: ".fiyo.click",
-      path: "/",
-      secure: true,
-      sameSite: "lax",
-    });
+    localStorage.setItem("user", JSON.stringify(userData)); // 👈 lưu user vào localStorage
+    localStorage.setItem("userId", userData._id); // 👈 lưu riêng userId nếu cần
   };
 
   const logoutUser = () => {
     setUser(null);
     localStorage.removeItem("user");
-    Cookies.remove("token", { domain: ".fiyo.click" });
+    localStorage.removeItem("token");
   };
 
   return (
@@ -62,6 +48,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
+// Custom hook
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
