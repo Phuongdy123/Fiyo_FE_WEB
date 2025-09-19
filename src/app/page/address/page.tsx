@@ -8,36 +8,43 @@ import { IAddress } from "@/app/untils/IAddress";
 import { addAddress, getAllAddress } from "@/app/services/Address/SAddress";
 import { useToast } from "@/app/context/CToast";
 
-/** ==== Chuẩn hoá dữ liệu từ API thành format dùng cho UI ==== */
+/** ==== Chuẩn hoá dữ liệu từ API mới (tinhthanhpho.com) ==== */
 type NormProvince = { code: string; name: string };
 type NormWard = { code: string; name: string; province_code: string };
 
 function normalizeProvinces(raw: any): NormProvince[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
+  const arr = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+  return arr
     .map((p: any) => ({
-      code: String(p?.province_code ?? p?.code ?? p?.id ?? "").trim(),
-      name: String(p?.province_name ?? p?.name ?? p?.full_name ?? "").trim(),
+      code: String(p?.code ?? p?.province_code ?? p?.id ?? "").trim(),
+      name: String(p?.name ?? p?.province_name ?? p?.full_name ?? "").trim(),
     }))
-    .filter((x) => x.code && x.name);
+    .filter((x:any) => x.code && x.name);
 }
 
 function normalizeWards(raw: any): NormWard[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
+  const arr = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+  return arr
     .map((w: any) => ({
-      code: String(w?.ward_code ?? w?.code ?? w?.id ?? "").trim(),
-      name: String(w?.ward_name ?? w?.name ?? w?.full_name ?? "").trim(),
+      code: String(w?.code ?? w?.ward_code ?? w?.id ?? "").trim(),
+      name: String(w?.name ?? w?.ward_name ?? w?.full_name ?? "").trim(),
       province_code: String(w?.province_code ?? w?.parent_code ?? "").trim(),
     }))
-    .filter((x) => x.code && x.name);
+    .filter((x:any) => x.code && x.name && x.province_code);
+}
+
+/** Helper fetch JSON */
+async function fetchJSON(url: string) {
+  const res = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export default function AddressPage() {
   const { user } = useAuth();
   const userId = user?._id;
 
-  const { showToast } = useToast(); // <-- thêm khởi tạo showToast
+  const { showToast } = useToast();
 
   const [editId, setEditId] = useState<string | null>(null);
   const [addressList, setAddressList] = useState<IAddress[]>([]);
@@ -56,8 +63,8 @@ export default function AddressPage() {
     detail: "", // số nhà/đường
     type: "Nhà Riêng",
     user_id: userId || "",
-    province: "", // lưu province_code
-    ward: "", // lưu ward_code
+    province: "", // province_code
+    ward: "", // ward_code
   });
 
   const [selectedAddress, setSelectedAddress] = useState({
@@ -65,18 +72,13 @@ export default function AddressPage() {
     ward: "", // ward_code
   });
 
-  /** Lấy Tỉnh/Thành phố (không lọc) */
+  /** Lấy Tỉnh/Thành phố (API mới) */
   useEffect(() => {
     (async () => {
       try {
         setError(null);
-        const res = await fetch("https://34tinhthanh.com/api/provinces", {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setProvinces(normalizeProvinces(data));
+        const json = await fetchJSON("https://tinhthanhpho.com/api/v1/new-provinces?limit=1000");
+        setProvinces(normalizeProvinces(json));
       } catch (e: any) {
         console.error("Lỗi provinces:", e);
         setError("Không thể tải danh sách Tỉnh/Thành.");
@@ -85,7 +87,7 @@ export default function AddressPage() {
     })();
   }, []);
 
-  /** Lấy Phường/Xã theo province_code */
+  /** Lấy Phường/Xã theo province_code (API mới) */
   useEffect(() => {
     if (!selectedAddress.province) {
       setWards([]);
@@ -96,15 +98,12 @@ export default function AddressPage() {
       try {
         setError(null);
         setIsLoadingWards(true);
-        const res = await fetch(
-          `https://34tinhthanh.com/api/wards?province_code=${encodeURIComponent(
+        const json = await fetchJSON(
+          `https://tinhthanhpho.com/api/v1/new-provinces/${encodeURIComponent(
             selectedAddress.province
-          )}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" }
+          )}/wards?limit=1000`
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setWards(normalizeWards(data));
+        setWards(normalizeWards(json));
       } catch (e: any) {
         console.error("Lỗi wards:", e);
         setError("Không thể tải danh sách Phường/Xã.");
@@ -229,11 +228,9 @@ export default function AddressPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        // alert("Cập nhật địa chỉ thành công");
         showToast("Cập nhật địa chỉ thành công", "success");
       } else {
         await addAddress(payload);
-        // alert("Thêm địa chỉ thành công");
         showToast("Thêm địa chỉ thành công", "success");
       }
 
@@ -253,7 +250,7 @@ export default function AddressPage() {
     } catch (e: any) {
       console.error("Lỗi khi lưu địa chỉ:", e);
       setError(e.message || "Lỗi khi lưu địa chỉ");
-      showToast(e?.message || "Lỗi khi lưu địa chỉ", "error"); // thêm toast lỗi (không đổi logic khác)
+      showToast(e?.message || "Lỗi khi lưu địa chỉ", "error");
     }
   };
 

@@ -9,29 +9,32 @@ import { IVoucher } from "@/app/untils/IVoucher";
 import { getDefaultAddress } from "@/app/services/Address/SAddress";
 import { getAllVoucher } from "@/app/services/Voucher/SVoucher";
 
-/* ===== Chuẩn hoá dữ liệu từ API 34tinhthanh ===== */
+/* ===== Chuẩn hoá dữ liệu từ API 34 tỉnh/thành (mới) ===== */
 type Province = { code: string; name: string };
 type Ward = { code: string; name: string; province_code: string };
 
 function normalizeProvinces(raw: any): Province[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
+  // Nguồn mới: { data: [{ code, name, type }] }
+  // Vẫn hỗ trợ các key cũ để an toàn.
+  const arr = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+  return arr
     .map((p: any) => ({
-      code: String(p?.province_code ?? p?.code ?? p?.id ?? "").trim(),
-      name: String(p?.province_name ?? p?.name ?? p?.full_name ?? "").trim(),
+      code: String(p?.code ?? p?.province_code ?? p?.id ?? "").trim(),
+      name: String(p?.name ?? p?.province_name ?? p?.full_name ?? "").trim(),
     }))
-    .filter((x) => x.code && x.name);
+    .filter((x:any) => x.code && x.name);
 }
 
 function normalizeWards(raw: any): Ward[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
+  // Nguồn mới: { data: [{ code, name, province_code }] }
+  const arr = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+  return arr
     .map((w: any) => ({
-      code: String(w?.ward_code ?? w?.code ?? w?.id ?? "").trim(),
-      name: String(w?.ward_name ?? w?.name ?? w?.full_name ?? "").trim(),
+      code: String(w?.code ?? w?.ward_code ?? w?.id ?? "").trim(),
+      name: String(w?.name ?? w?.ward_name ?? w?.full_name ?? "").trim(),
       province_code: String(w?.province_code ?? w?.parent_code ?? "").trim(),
     }))
-    .filter((x) => x.code && x.name);
+    .filter((x:any) => x.code && x.name && x.province_code);
 }
 
 /* ===== Idempotency key helper ===== */
@@ -41,8 +44,15 @@ function genIdemKey() {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+/* ===== Small fetch helper ===== */
+async function fetchJSON(url: string) {
+  const res = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export default function CheckoutComponent() {
-    const [shopNames, setShopNames] = useState<Record<string, string>>({});
+  const [shopNames, setShopNames] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { showToast } = useToast();
   const userId = user?._id;
@@ -167,18 +177,15 @@ export default function CheckoutComponent() {
     initializeVoucher();
   }, []);
 
-  // Lấy danh sách Tỉnh/TP (API mới, KHÔNG lọc)
+  // Lấy danh sách Tỉnh/TP (API mới – tinhthanhpho.com)
   useEffect(() => {
     (async () => {
       try {
         setError(null);
-        const res = await fetch("https://34tinhthanh.com/api/provinces", {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setProvinces(normalizeProvinces(data));
+        const json = await fetchJSON(
+          "https://tinhthanhpho.com/api/v1/new-provinces?limit=1000"
+        );
+        setProvinces(normalizeProvinces(json));
       } catch (e: any) {
         console.error("Lỗi provinces:", e);
         setError("Không thể lấy danh sách Tỉnh/Thành. Vui lòng thử lại sau.");
@@ -187,7 +194,7 @@ export default function CheckoutComponent() {
     })();
   }, []);
 
-  // Lấy Phường/Xã theo province_code
+  // Lấy Phường/Xã theo province_code (API mới – tinhthanhpho.com)
   useEffect(() => {
     if (!province) {
       setWards([]);
@@ -199,15 +206,12 @@ export default function CheckoutComponent() {
       try {
         setError(null);
         setIsLoadingWards(true);
-        const res = await fetch(
-          `https://34tinhthanh.com/api/wards?province_code=${encodeURIComponent(
+        const json = await fetchJSON(
+          `https://tinhthanhpho.com/api/v1/new-provinces/${encodeURIComponent(
             province
-          )}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" }
+          )}/wards?limit=1000`
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setWards(normalizeWards(data));
+        setWards(normalizeWards(json));
         setWard("");
       } catch (e: any) {
         console.error("Lỗi wards:", e);
@@ -257,107 +261,97 @@ export default function CheckoutComponent() {
   const finalTotal = Math.max(0, total - discountAmount);
 
   /* ====== CHỈ gọi 1 API /api/orders/guess & redirect trực tiếp payment_url ====== */
-  const handleCheckout = async () => {
-    if (isSubmitting || lockRef.current) return;
+const handleCheckout = async () => {
+  if (isSubmitting || lockRef.current) return;
 
-    if (cart.length === 0) {
-      showToast("Giỏ hàng trống. Vui lòng thêm sản phẩm để thanh toán!", "error");
-      return;
-    }
+  if (cart.length === 0) {
+    showToast("Giỏ hàng trống. Vui lòng thêm sản phẩm để thanh toán!", "error");
+    return;
+  }
 
-    if (!validateForm()) {
-      showToast("Vui lòng kiểm tra và điền đầy đủ thông tin!", "error");
-      return;
-    }
+  // Giữ/hoặc bỏ validateForm tùy bạn
+  if (!validateForm()) {
+    showToast("Vui lòng kiểm tra và điền đầy đủ thông tin!", "error");
+    return;
+  }
 
-    if (
-      voucher &&
-      (total < (voucher.min_total || 0) || total > (voucher.max_total ?? 9e15))
-    ) {
-      showToast("Mã ưu đãi không áp dụng được cho đơn hàng này!", "error");
-      return;
-    }
+  if (voucher && (total < (voucher.min_total || 0) || total > (voucher.max_total ?? 9e15))) {
+    showToast("Mã ưu đãi không áp dụng được cho đơn hàng này!", "error");
+    return;
+  }
 
-    setIsSubmitting(true);
-    lockRef.current = true;
+  setIsSubmitting(true);
+  lockRef.current = true;
 
-    const provinceName = provinces.find((p) => p.code === province)?.name || "";
-    const wardName = wards.find((w) => w.code === ward)?.name || "";
-    const fullAddress = `${detailAddress}, ${wardName}, ${provinceName}`
-      .replace(/,\s*,/g, ", ")
-      .replace(/,\s*$/, "");
+  const provinceName = provinces.find((p) => p.code === province)?.name || "";
+  const wardName = wards.find((w) => w.code === ward)?.name || "";
+  const fullAddress = `${detailAddress}, ${wardName}, ${provinceName}`
+    .replace(/,\s*,/g, ", ")
+    .replace(/,\s*$/, "");
 
-    const address_guess = {
-      name,
-      phone,
-      email,
-      address: fullAddress,
-      type: "Nhà riêng",
-      detail: detailAddress,
-      province, // code
-      ward,     // code
-    };
-
-    const body = {
-      name,
-      phone,
-      address_guess,
-      voucher_id: voucher?._id,
-      total_price: finalTotal,
-      payment_method: paymentMethod, // "cod" | "vnpay"
-      status_order: "unpending",     // theo quy ước guest
-      products: cart.map((item) => ({
-        product_id: item.id,
-        variant_id: item.variant_id,
-        size_id: item.size_id,
-        quantity: item.quantity,
-        image: item.image,
-      })),
-      locale: "vn",
-    };
-
-    try {
-      const res = await fetch("https://fiyo-be.onrender.com/api/orders/guess", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-idempotency-key": genIdemKey(), // chống double submit ở BE (khuyến nghị)
-        },
-        body: JSON.stringify(body),
-      });
-
-      const result = await res.json();
-
-      if (!result?.status) {
-        showToast(result?.message || "Đặt hàng thất bại!", "error");
-        return;
-      }
-
-      if (paymentMethod === "cod") {
-        // COD: clear ngay
-        clearCart();
-        localStorage.removeItem("selectedVoucher");
-        sessionStorage.removeItem("selectedVoucher");
-        showToast("Đặt hàng thành công!", "success");
-        setTimeout(() => (window.location.href = "/"), 1200);
-        return;
-      }
-
-      // Online (VNPAY): redirect TRỰC TIẾP sang cổng thanh toán
-      const paymentUrl = result?.payment_url;
-      if (paymentUrl) {
-        window.location.href = paymentUrl;
-      } else {
-        showToast("Không lấy được link thanh toán, thử lại sau.", "error");
-      }
-    } catch (e) {
-      console.error("Lỗi khi đặt hàng:", e);
-      showToast("Lỗi khi gửi đơn hàng!", "error");
-    } finally {
-      setIsSubmitting(false);
-      lockRef.current = false;
-    }
+  const address_guess = {
+    name,
+    phone,
+    email,
+    address: fullAddress,
+    type: "Nhà riêng",
+    detail: detailAddress,
+    province, // code
+    ward,     // code
   };
+
+  const body = {
+    name,
+    phone,
+    address_guess,
+    voucher_id: voucher?._id,
+    total_price: finalTotal,
+    payment_method: paymentMethod, // "cod" | "vnpay"
+    // ❌ KHÔNG gửi status_order ở FE
+    products: cart.map((item) => ({
+      product_id: item.id,
+      variant_id: item.variant_id,
+      size_id: item.size_id,
+      quantity: item.quantity,
+      image: item.image,
+    })),
+    locale: "vn",
+  };
+
+  try {
+    // ✅ gọi chế độ instant ở BE
+    const res = await fetch("https://fiyo-be.onrender.com/api/orders/guess?instant=true", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-idempotency-key": genIdemKey(),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await res.json();
+
+    if (!result?.status) {
+      showToast(result?.message || "Đặt hàng thất bại!", "error");
+      return;
+    }
+
+    // ✅ instant mode: coi như hoàn tất, không mở cổng thanh toán nữa
+    clearCart();
+    localStorage.removeItem("selectedVoucher");
+    sessionStorage.removeItem("selectedVoucher");
+    showToast("Đặt hàng thành công!", "success");
+    // điều hướng trang “thành công” của bạn
+    setTimeout(() => (window.location.href = "/page/payment/success"), 800);
+  } catch (e) {
+    console.error("Lỗi khi đặt hàng:", e);
+    showToast("Lỗi khi gửi đơn hàng!", "error");
+  } finally {
+    setIsSubmitting(false);
+    lockRef.current = false;
+  }
+};
+
 
   const handleSelectVoucher = (v: IVoucher) => {
     setVoucher(v);
@@ -365,27 +359,27 @@ export default function CheckoutComponent() {
     sessionStorage.setItem("selectedVoucher", JSON.stringify(v));
     setShowVoucherModal(false);
   };
+
   useEffect(() => {
-  async function fetchShops() {
-    const names: Record<string, string> = {};
-    for (const item of cart) {
-      if (item.shop_id && !names[item.shop_id]) {
-        try {
-          const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${item.shop_id}`);
-          const data = await res.json();
-          if (data?.name || data?.shop?.name) {
-            names[item.shop_id] = data.name || data.shop.name;
+    async function fetchShops() {
+      const names: Record<string, string> = {};
+      for (const item of cart) {
+        if (item.shop_id && !names[item.shop_id]) {
+          try {
+            const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${item.shop_id}`);
+            const data = await res.json();
+            if (data?.name || data?.shop?.name) {
+              names[item.shop_id] = data.name || data.shop.name;
+            }
+          } catch (e) {
+            console.error("Không lấy được shop:", e);
           }
-        } catch (e) {
-          console.error("Không lấy được shop:", e);
         }
       }
+      setShopNames(names);
     }
-    setShopNames(names);
-  }
-  if (cart.length > 0) fetchShops();
-}, [cart]);
-
+    if (cart.length > 0) fetchShops();
+  }, [cart]);
 
   return (
     <>
@@ -605,8 +599,8 @@ export default function CheckoutComponent() {
                         <div className="checkout-cart__item-option">Màu: {item.variant}</div>
                         <div className="checkout-cart__item-option">Size: {item.size}</div>
                         <div className="checkout-cart__item-option">
-        <b>Shop :</b> {shopNames[item.shop_id] || "Đang tải..."}
-      </div>
+                          <b>Shop :</b> {shopNames[item.shop_id] || "Đang tải..."}
+                        </div>
                       </div>
                       <div className="checkout-cart__item-qty">Số lượng: x {item.quantity}</div>
                       <div className="checkout-cart__item-price">

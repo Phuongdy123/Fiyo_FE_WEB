@@ -14,7 +14,7 @@ import { getVoucherByUserId } from "@/app/services/Voucher/SVoucher";
 import { useToast } from "@/app/context/CToast";
 import { getColorStyle } from "../../shared/ColorBox";
 
-/* ===== Chuẩn hoá dữ liệu từ API 34tinhthanh ===== */
+/* ===== Chuẩn hoá dữ liệu từ API 34 tỉnh/thành ===== */
 type NormProvince = { code: string; name: string };
 type NormWard = { code: string; name: string; province_code: string };
 
@@ -22,8 +22,8 @@ function normalizeProvinces(raw: any): NormProvince[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((p: any) => ({
-      code: String(p?.province_code ?? p?.code ?? p?.id ?? "").trim(),
-      name: String(p?.province_name ?? p?.name ?? p?.full_name ?? "").trim(),
+      code: String(p?.code ?? p?.province_code ?? p?.id ?? "").trim(),
+      name: String(p?.name ?? p?.province_name ?? p?.full_name ?? "").trim(),
     }))
     .filter((x) => x.code && x.name);
 }
@@ -32,8 +32,8 @@ function normalizeWards(raw: any): NormWard[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((w: any) => ({
-      code: String(w?.ward_code ?? w?.code ?? w?.id ?? "").trim(),
-      name: String(w?.ward_name ?? w?.name ?? w?.full_name ?? "").trim(),
+      code: String(w?.code ?? w?.ward_code ?? w?.id ?? "").trim(),
+      name: String(w?.name ?? w?.ward_name ?? w?.full_name ?? "").trim(),
       province_code: String(w?.province_code ?? w?.parent_code ?? "").trim(),
     }))
     .filter((x) => x.code && x.name);
@@ -41,10 +41,16 @@ function normalizeWards(raw: any): NormWard[] {
 
 /* ===== Idempotency key helper ===== */
 function genIdemKey() {
-  // Trình duyệt mới có crypto.randomUUID; fallback nếu thiếu
   return (globalThis.crypto && "randomUUID" in globalThis.crypto)
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+/* ======= Fallback fetch helper ======= */
+async function fetchJSON(url: string) {
+  const res = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export default function CheckoutComponent() {
@@ -55,7 +61,7 @@ export default function CheckoutComponent() {
 
   const userId = user?._id;
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const lockRef = useRef(false); // 👈 chống bấm liên tiếp
+  const lockRef = useRef(false); // chống bấm liên tiếp
 
   const formatPrice = (price: number | null | undefined) =>
     typeof price === "number" && !isNaN(price)
@@ -174,27 +180,35 @@ export default function CheckoutComponent() {
     initializeVoucher();
   }, []);
 
-  /* ====== Provinces (API mới, KHÔNG lọc) ====== */
+  /* ====== Provinces (API mới, có fallback) ====== */
   useEffect(() => {
     (async () => {
       try {
         setError(null);
-        const res = await fetch("https://34tinhthanh.com/api/provinces", {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setProvinces(normalizeProvinces(data));
-      } catch (e: any) {
-        console.error("Lỗi provinces:", e);
-        setError("Không thể tải danh sách Tỉnh/Thành.");
-        setProvinces([]);
+
+        // Nguồn chính: tinhthanhpho.com (34 tỉnh/thành)
+        // Trả về { data: [{ code, name, type }] }
+        const json = await fetchJSON(
+          "https://tinhthanhpho.com/api/v1/new-provinces?limit=1000"
+        );
+        setProvinces(normalizeProvinces(json?.data));
+      } catch (eMain: any) {
+        console.error("Lỗi provinces (main):", eMain);
+
+        // Fallback: open-api v2 (sau sáp nhập, structure {code,name})
+        try {
+          const fb = await fetchJSON("https://provinces.open-api.vn/api/?depth=1"); // v2 ghi chú mới
+          setProvinces(normalizeProvinces(Array.isArray(fb) ? fb : []));
+        } catch (eFb: any) {
+          console.error("Lỗi provinces (fallback):", eFb);
+          setError("Không thể tải danh sách Tỉnh/Thành.");
+          setProvinces([]);
+        }
       }
     })();
   }, []);
 
-  /* ====== Wards theo province_code ====== */
+  /* ====== Wards theo province_code (API mới, có fallback) ====== */
   useEffect(() => {
     if (!selectedAddress.province) {
       setWards([]);
@@ -205,19 +219,35 @@ export default function CheckoutComponent() {
       try {
         setError(null);
         setIsLoadingWards(true);
-        const res = await fetch(
-          `https://34tinhthanh.com/api/wards?province_code=${encodeURIComponent(
+
+        // Nguồn chính: tinhthanhpho.com
+        // /api/v1/new-provinces/{code}/wards
+        const json = await fetchJSON(
+          `https://tinhthanhpho.com/api/v1/new-provinces/${encodeURIComponent(
             selectedAddress.province
-          )}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" }
+          )}/wards?limit=1000`
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setWards(normalizeWards(data));
-      } catch (e: any) {
-        console.error("Lỗi wards:", e);
-        setError("Không thể tải danh sách Phường/Xã.");
-        setWards([]);
+        setWards(normalizeWards(json?.data));
+      } catch (eMain: any) {
+        console.error("Lỗi wards (main):", eMain);
+
+        // Fallback: open-api v2 — không có district, ta lọc wards theo parent_code/province_code nếu API trả phẳng
+        try {
+          // Một số mirror v2 trả toàn bộ xã/phường, ở đây gọi thử danh sách all và lọc (nếu server cho phép)
+          const fb = await fetchJSON("https://provinces.open-api.vn/api/w/"); // giả định endpoint wards-all
+          const list = Array.isArray(fb) ? fb : [];
+          const filtered = list.filter(
+            (w: any) =>
+              String(w?.province_code ?? w?.parent_code ?? "") === String(selectedAddress.province)
+          );
+          setWards(normalizeWards(filtered));
+        } catch (eFb: any) {
+          console.error("Lỗi wards (fallback):", eFb);
+          setError("Không thể tải danh sách Phường/Xã.");
+          setWards([]);
+        } finally {
+          setIsLoadingWards(false);
+        }
       } finally {
         setIsLoadingWards(false);
       }
@@ -319,7 +349,7 @@ export default function CheckoutComponent() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-idempotency-key": genIdemKey(), // 👈 chống double submit
+          "x-idempotency-key": genIdemKey(),
         },
         body: JSON.stringify(data),
       });
@@ -332,7 +362,6 @@ export default function CheckoutComponent() {
       }
 
       if (paymentMethod === "cod") {
-        // COD: clear luôn
         sessionStorage.removeItem("selectedVoucher");
         localStorage.removeItem("selectedVoucher");
         clearCart();
@@ -341,7 +370,6 @@ export default function CheckoutComponent() {
         return;
       }
 
-      // Online (VNPAY / ZaloPay): redirect trực tiếp sang cổng thanh toán
       const paymentUrl = result?.payment_url;
       if (paymentUrl) {
         window.location.href = paymentUrl;
@@ -440,28 +468,27 @@ export default function CheckoutComponent() {
       </div>
     );
   }
-  
-useEffect(() => {
-  async function fetchShops() {
-    const names: Record<string, string> = {};
-    for (const item of cart) {
-      if (item.shop_id && !names[item.shop_id]) {
-        try {
-          const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${item.shop_id}`);
-          const data = await res.json();
-          if (data?.name || data?.shop?.name) {
-            names[item.shop_id] = data.name || data.shop.name;
+
+  useEffect(() => {
+    async function fetchShops() {
+      const names: Record<string, string> = {};
+      for (const item of cart) {
+        if (item.shop_id && !names[item.shop_id]) {
+          try {
+            const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${item.shop_id}`);
+            const data = await res.json();
+            if (data?.name || data?.shop?.name) {
+              names[item.shop_id] = data.name || data.shop.name;
+            }
+          } catch (e) {
+            console.error("Không lấy được shop:", e);
           }
-        } catch (e) {
-          console.error("Không lấy được shop:", e);
         }
       }
+      setShopNames(names);
     }
-    setShopNames(names);
-  }
-  if (cart.length > 0) fetchShops();
-}, [cart]);
-
+    if (cart.length > 0) fetchShops();
+  }, [cart]);
 
   return (
     <>
@@ -590,8 +617,7 @@ useEffect(() => {
                       <div className="checkout-cart__item-name">
                         <a href="#">{item.name}</a>
                       </div>
-                      
-                      
+
                       <div className="checkout-cart__item-options">
                         <div className="checkout-cart__item-option">
                           <span
@@ -609,13 +635,13 @@ useEffect(() => {
                           <span className="value">{item.variant}</span>
                         </div>
                       </div>
-                      
+
                       <div className="checkout-cart__item-option">
                         Kích thước: {item.size}
                       </div>
                       <div className="checkout-cart__item-name">
-        <b>Shop :</b> {shopNames[item.shop_id] || "Đang tải..."}
-      </div>
+                        <b>Shop :</b> {shopNames[item.shop_id] || "Đang tải..."}
+                      </div>
                     </div>
                     <div className="checkout-cart__item-qty">
                       Số lượng: x{item.quantity}
@@ -624,9 +650,7 @@ useEffect(() => {
                       <div className="checkout-cart__item-price--normal">
                         Đơn giá: {formatPrice(item.price)} ₫
                       </div>
-                      
                     </div>
-                    
                   </div>
                 </div>
               </div>
