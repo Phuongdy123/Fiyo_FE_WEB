@@ -118,9 +118,9 @@ export default function Home() {
         <ProductFlashSaleSection startAt={startAt} endAt={endAt}/>
 
         {/* Banner & các section khác */}
-        <div className="banner-hot">
+        {/* <div className="banner-hot">
           <img src="https://2885371169.e.cdneverest.net/Simiconnector/4_HOMEWEAR_DESKTOP.webp" />
-        </div>
+        </div> */}
 
         <HotProductSection />
 
