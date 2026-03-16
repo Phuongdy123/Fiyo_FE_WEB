@@ -30,7 +30,7 @@ export default function Home() {
 
       <div className="main-content">
         {/* Service blocks */}
-        <div className="block-service">
+        {/* <div className="block-service">
           <div className="item">
             <div className="icon">
               <img
@@ -84,7 +84,7 @@ export default function Home() {
               </span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Ưu đãi */}
         <div className="title-home">
@@ -119,13 +119,13 @@ export default function Home() {
 
         {/* Banner & các section khác */}
         <div className="banner-hot">
-          <img src="https://2885371169.e.cdneverest.net/media/Simiconnector/TSDH_cate_desktop-210525.webp" />
+          <img src="https://2885371169.e.cdneverest.net/Simiconnector/4_HOMEWEAR_DESKTOP.webp" />
         </div>
 
         <HotProductSection />
 
         <div className="banner2">
-          <img src="https://2885371169.e.cdneverest.net/media/Simiconnector/2.Quansooc_blockhomepage_desktop-17Mar25H.webp" />
+          <img src="https://2885371169.e.cdneverest.net/Simiconnector/Bannercate_quan_desktop-150126.webp" />
         </div>
 
         <ProductBottomSection />
