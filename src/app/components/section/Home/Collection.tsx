@@ -33,7 +33,7 @@ export default function CollectionSlider() {
 
       <div className="slick-slide" onClick={() => handleClick('64f0d0008f1e7e0012345671')}>
         <img
-          src="https://img.sanishtech.com/u/7f0bcb4d09ba550cc0d58e042da5ae69.jpg"
+          src="https://img.sanishtech.com/u/f5eab164b52552bbbd8f1869f7900989.png"
           alt="Bé trai"
         />
       </div>
