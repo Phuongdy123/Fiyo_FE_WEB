@@ -98,7 +98,7 @@ export default function Header() {
     title="Home Page"
   >
     <img
-      src="https://img.sanishtech.com/u/23085a0706aeb1a900ea2557b9c01219.png"
+      src="https://i.ibb.co/R43sFs6q/Gemini-Generated-Image-o5qneto5qneto5qn.png"
       alt="FIYO"
       width={83}
       height={44}

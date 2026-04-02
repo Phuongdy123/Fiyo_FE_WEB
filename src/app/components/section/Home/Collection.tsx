@@ -12,28 +12,28 @@ export default function CollectionSlider() {
     <div className="collections">
       <div className="slick-slide" onClick={() => handleClick('64f0d0008f1e7e001234568f')}>
         <img
-          src="https://2885371169.e.cdneverest.net/media/Simiconnector/Nu-spMoi-05Mar.webp"
+          src="https://i.ibb.co/9HgqvwqW/B-TRAI-1.png"
           alt="Nữ"
         />
       </div>
 
       <div className="slick-slide" onClick={() => handleClick('64f0d0008f1e7e0012345680')}>
         <img
-          src="https://img.sanishtech.com/u/467efee04301fd1184b234d205eed698.jpg"
+          src="https://i.ibb.co/39kH5ZKW/B-TRAI-2.png"
           alt="Nam"
         />
       </div>
 
       <div className="slick-slide" onClick={() => handleClick('64f0c0008f1e7e0012345678')}>
         <img
-          src="https://2885371169.e.cdneverest.net/media/Simiconnector/BG-07Mar.webp"
+          src="https://i.ibb.co/bgs3H87f/B-TRAI-3.png"
           alt="Bé gái"
         />
       </div>
 
       <div className="slick-slide" onClick={() => handleClick('64f0d0008f1e7e0012345671')}>
         <img
-          src="https://img.sanishtech.com/u/f5eab164b52552bbbd8f1869f7900989.png"
+          src="https://i.ibb.co/GzrZnBf/B-TRAI.png"
           alt="Bé trai"
         />
       </div>
