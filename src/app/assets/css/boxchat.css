@@ -1685,3 +1685,20 @@ img {
 /* boxchat.css */
 .fiyo-product-card .pill { pointer-events: auto; position: relative; z-index: 1; }
 .message-content, .message-content * { pointer-events: auto; }
+/* Fix zoom lung tung khi focus input/textarea trên mobile */
+@media (max-width: 768px) {
+    .main-input,
+    .ant-input,
+    textarea,
+    input[type="text"],
+    input[type="email"],
+    input[type="number"] {
+        font-size: 16px !important;   /* Quan trọng nhất */
+        line-height: 1.4;
+    }
+
+    /* Ngăn zoom thêm một lớp bảo hiểm (nếu cần) */
+    .input-box .main-input:focus {
+        font-size: 16px !important;
+    }
+}

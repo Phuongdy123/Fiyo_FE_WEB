@@ -1,22 +1,34 @@
 export const getColorStyle = (color?: string) => {
-  if (!color) return { backgroundColor: "#cccccc" }; // nếu null/undefined thì trả về màu mặc định
+  const DEFAULT_STYLE = { backgroundColor: "#cccccc" };
+  
+  if (!color) return DEFAULT_STYLE;
 
   const lowerColor = color.toLowerCase();
 
-  if (lowerColor.includes("đen")) return { backgroundColor: "#000000" };
-  if (lowerColor.includes("hồng")) return { backgroundColor: "#f9c5d1" };
-  if (lowerColor.includes("trắng")) return { backgroundColor: "#ffffff" };
-  if (lowerColor.includes("xám")) return { backgroundColor: "#808080" };
-  if (lowerColor.includes("xanh dương kẻ sọc")) return { backgroundColor: "#1e90ff" };
-  if (lowerColor.includes("xanh họa tiết")) return { backgroundColor: "#87ceeb" };
-  if (lowerColor.includes("trắng họa tiết")) return { backgroundColor: "#f5f5f5" };
-  if (lowerColor.includes("vàng kẻ sọc")) return { backgroundColor: "#ffeb3b" };
-  if (lowerColor.includes("xanh dương")) return { backgroundColor: "#1e90ff" };
-  if (lowerColor.includes("be kẻ sọc")) return { backgroundColor: "#f5f5dc" };
-  if (lowerColor.includes("tím")) return { backgroundColor: "#dda0dd" };
-  if (lowerColor.includes("đỏ")) return { backgroundColor: "#ff0000" };
-  if (lowerColor.includes("vàng")) return { backgroundColor: "#ffd700" };
-  if (lowerColor.includes("cam")) return { backgroundColor: "#9c420aff" };
+  // 1. Định nghĩa bảng màu (Mapping)
+  // Thứ tự ưu tiên: Các chuỗi dài/chi tiết hơn nên được kiểm tra trước
+  const colorMap: Record<string, string> = {
+    "xanh dương kẻ sọc": "#1e90ff",
+    "xanh họa tiết": "#87ceeb",
+    "trắng họa tiết": "#f5f5f5",
+    "vàng kẻ sọc": "#ffeb3b",
+    "be kẻ sọc": "#f5f5dc",
+    "xanh dương": "#1e90ff",
+    "đen": "#000000",
+    "hồng": "#f9c5d1",
+    "trắng": "#ffffff",
+    "xám": "#808080",
+    "tím": "#dda0dd",
+    "đỏ": "#ff0000",
+    "vàng": "#ffd700",
+    "cam": "#9c420aff",
+  };
 
-  return { backgroundColor: "#cccccc" };
+  // 2. Tìm kiếm màu phù hợp
+  // Sử dụng find để lấy key đầu tiên khớp với chuỗi đầu vào
+  const matchedKey = Object.keys(colorMap).find(key => lowerColor.includes(key));
+
+  return matchedKey 
+    ? { backgroundColor: colorMap[matchedKey] } 
+    : DEFAULT_STYLE;
 };

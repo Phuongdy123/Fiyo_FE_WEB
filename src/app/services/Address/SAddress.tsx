@@ -1,69 +1,56 @@
 import { IAddress } from "@/app/untils/IAddress";
 
+const BASE_URL = "https://fiyo-be.onrender.com/api/address";
+
+/**
+ * Hàm tiện ích xử lý gọi API dùng chung (Clean Code)
+ */
+async function handleResponse<T>(res: Response): Promise<T> {
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Thao tác thất bại");
+  }
+  return data;
+}
+
+/**
+ * Thêm địa chỉ mới
+ */
 export const addAddress = async (data: IAddress): Promise<IAddress> => {
-  const res = await fetch("https://fiyo-be.onrender.com/api/address/create", {
+  const res = await fetch(`${BASE_URL}/create`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Thêm địa chỉ thất bại");
-  }
-
-  const result = await res.json();
-  return result.result as IAddress;
+  const result = await handleResponse<{ result: IAddress }>(res);
+  return result.result;
 };
 
+/**
+ * Lấy tất cả địa chỉ của User
+ * Tối ưu: Sử dụng cache của Next.js (60s) để tránh load lại khi F5 liên tục
+ */
 export const getAllAddress = async (url: string): Promise<IAddress[]> => {
-  const res = await fetch(url);
-  const data = await res.json();
-
-  const address: IAddress[] = data.map((addr: any) => {
-    return {
-      _id: addr._id,
-      name: addr.name,
-      phone: addr.phone,
-      address: addr.address,
-      status: addr.status,
-      user_id: addr.user_id,
-      type: addr.type,
-      detail: addr.detail,
-      is_default:addr.is_default,
-      createdAt: addr.createdAt,
-      updatedAt: addr.updatedAt
-    };
+  const res = await fetch(url, {
+    next: { revalidate: 60 } 
   });
-
-  return address;
+  
+  const data = await handleResponse<IAddress[]>(res);
+  // Ép kiểu trực tiếp thay vì map từng dòng để tăng tốc độ xử lý CPU
+  return data;
 };
 
+/**
+ * Lấy địa chỉ mặc định
+ */
 export const getDefaultAddress = async (url: string): Promise<IAddress | null> => {
   try {
-    const res = await fetch(url);
-    const data = await res.json();
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    const data = await handleResponse<IAddress[]>(res);
 
-    const defaultAddr = data.find((addr: any) => addr.is_default === true);
-
-    if (!defaultAddr) return null;
-
-    const address: IAddress = {
-      _id: defaultAddr._id,
-      name: defaultAddr.name,
-      phone: defaultAddr.phone,
-      address: defaultAddr.address,
-      user_id: defaultAddr.user_id,
-      type: defaultAddr.type,
-      detail: defaultAddr.detail,
-      is_default: defaultAddr.is_default,
-      createdAt: defaultAddr.createdAt,
-      updatedAt: defaultAddr.updatedAt
-    };
-
-    return address;
+    // Dùng find trực tiếp trên data đã ép kiểu, trả về null nếu không thấy
+    return data.find((addr) => addr.is_default === true) || null;
   } catch (error) {
     console.error("Lỗi khi lấy địa chỉ mặc định:", error);
     return null;

@@ -1,40 +1,144 @@
 "use client";
-import { useEffect, useState } from "react";
+import HomeEffectsJs from "@/app/assets/js/home";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { IProduct } from "@/app/untils/IProduct";
 
-interface ICategory {
-  _id: string;
-  name: string;
-}
+export default function ProductItem({ product }: { product: IProduct }) {
+  // Chặn render nếu thiếu tên, ảnh hoặc bị ẩn
+  if (!product?.name || !product?.images || product.images.length === 0 || product.isHidden)
+    return null;
 
-export default function ShopCategories({ shopId }: { shopId: string }) {
-  const [categories, setCategories] = useState<ICategory[]>([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!shopId) return;
-    (async () => {
-      try {
-        const res = await fetch(`https://fiyo-be.onrender.com/api/shop/${shopId}/categories`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-        setCategories(data.categories);
-      } catch (err: any) {
-        setError(err.message || "Lỗi khi tải danh mục");
-      }
-    })();
-  }, [shopId]);
-
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-  if (!categories.length) return <p>Shop này chưa có danh mục nào.</p>;
+  // Kiểm tra nếu có giá sale hợp lệ
+  const showSale =
+    typeof product.sale === "number" &&
+    product.sale > 0 &&
+    product.sale < product.price;
+  const salePrice = showSale ? product.sale : product.price;
 
   return (
-    <div className="shop-categories">
-      <h3>Danh mục của shop</h3>
-      <ul>
-        {categories.map((c) => (
-          <li key={c._id}>{c.name}</li>
-        ))}
-      </ul>
-    </div>
+    <>
+      <div
+        tabIndex={-1}
+        className="product-item"
+        style={{ userSelect: "none", caretColor: "transparent" }}
+      >
+        <div wrapper-tag="div" className="product-item__info">
+          <div className="product-item__photo">
+            <div>
+              <Link
+                href={`/page/detail/${product._id}`}
+                className="product-item__image"
+              >
+                <img
+                  src={`${product.images?.[0]}`}
+                  width={415}
+                  height={554}
+                  alt={product.name}
+                  loading="lazy"
+                  className="product-image-photo"
+                  style={{ userSelect: "none", caretColor: "transparent" }}
+                />
+              </Link>
+            </div>
+            <div className="product-item__label--image">
+              <img
+                src="https://2885371169.e.cdneverest.net/pub/media/attribute/swatch/f/r/freeship_taglisting_desktop-02oct.png"
+                width={412}
+                height={50}
+                loading="lazy"
+                style={{ userSelect: "none", caretColor: "transparent" }}
+              />
+            </div>
+            <div className="product-item__button-tocart">
+              <span
+                tabIndex={-1}
+                style={{ userSelect: "none", caretColor: "transparent" }}
+              >
+                Xem nhanh
+              </span>
+            </div>
+          </div>
+          <div className="product-item__details">
+            <div className="product-item__color">
+              <div
+                className="product-item__color-option selected"
+                style={{
+                  backgroundImage: `url("${product.images?.[1]}")`,
+                  userSelect: "none",
+                  caretColor: "transparent",
+                }}
+              />
+              <div
+                className="product-item__color-option"
+                style={{
+                  backgroundImage: `url("${product.images?.[2]}")`,
+                  userSelect: "none",
+                  caretColor: "transparent",
+                }}
+              />
+              <div
+                className="product-item__color-option"
+                style={{
+                  backgroundImage: `url("${product.images?.[3]}")`,
+                  userSelect: "none",
+                  caretColor: "transparent",
+                }}
+              />
+              <div
+                className="product-item__color-option"
+                style={{
+                  backgroundImage: `url("${product.images?.[0]}")`,
+                  userSelect: "none",
+                  caretColor: "transparent",
+                }}
+              />
+              <span
+                className="product-item__color-viewall"
+                tabIndex={-1}
+                style={{ userSelect: "none", caretColor: "transparent" }}
+              >
+                <span></span>
+              </span>
+            </div>
+            <h4
+              aria-label="Áo phông unisex người lớn"
+              className="product-item__name"
+            >
+              <div>
+                <a
+                  href="#"
+                  aria-label="Áo phông unisex người lớn"
+                  tabIndex={-1}
+                  style={{ userSelect: "none", caretColor: "transparent" }}
+                >
+                  {product.name}
+                </a>
+              </div>
+            </h4>
+            <div className="product-item__price">
+              {showSale ? (
+                <>
+                  <span className="product-item__price--normal">
+                    {salePrice.toLocaleString("vi-VN")} ₫
+                  </span>
+                  <span className="product-item__price--percent">
+                    -{Math.round(((product.price - salePrice) / product.price) * 100)}%
+                  </span>
+                  <span className="product-item__price--old">
+                    {product.price.toLocaleString("vi-VN")} ₫
+                  </span>
+                </>
+              ) : (
+                <span className="product-item__price--normal">
+                  {product.price.toLocaleString("vi-VN")} ₫
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <HomeEffectsJs />
+      </div>
+    </>
   );
 }

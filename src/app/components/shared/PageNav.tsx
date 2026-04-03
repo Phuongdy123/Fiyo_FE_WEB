@@ -1,28 +1,24 @@
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from "react";
+
 interface Props {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-import { useState, useEffect } from "react";
+const MAX_PAGES_TO_SHOW = 4;
+const ITEMS_PER_PAGE = 4; // Số lượng item trên mỗi trang để hiển thị text
 
 export default function PageNavComponents({
   currentPage,
   totalPages,
   onPageChange,
 }: Props) {
-  const maxPagesToShow = 4;
-  const [pageGroup, setPageGroup] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  const totalGroups = Math.ceil(totalPages / maxPagesToShow);
-
-  useEffect(() => {
-    const newGroup = Math.floor((currentPage - 1) / maxPagesToShow);
-    setPageGroup(newGroup);
-  }, [currentPage]);
-
-  // Theo dõi thay đổi kích thước màn hình
+  // 1. Theo dõi Resize (Tối ưu Cleanup)
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
@@ -30,102 +26,81 @@ export default function PageNavComponents({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const startPage = pageGroup * maxPagesToShow + 1;
-  const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+  // 2. Tính toán Logic phân trang (Dùng useMemo để tránh tính toán lại vô ích)
+  const paginationData = useMemo(() => {
+    const pageGroup = Math.floor((currentPage - 1) / MAX_PAGES_TO_SHOW);
+    const startPage = pageGroup * MAX_PAGES_TO_SHOW + 1;
+    const endPage = Math.min(startPage + MAX_PAGES_TO_SHOW - 1, totalPages);
 
-  const pages = [];
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-
-  const handlePrevGroup = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (pageGroup > 0) {
-      const newGroup = pageGroup - 1;
-      setPageGroup(newGroup);
-      onPageChange(newGroup * maxPagesToShow + 1);
+    const pagesRange = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pagesRange.push(i);
     }
-  };
 
-  const handleNextGroup = (e: React.MouseEvent) => {
+    return { pagesRange, startPage, endPage };
+  }, [currentPage, totalPages]);
+
+  // 3. Hàm xử lý chuyển trang dùng chung
+  const handlePageAction = useCallback((e: React.MouseEvent, targetPage: number) => {
     e.preventDefault();
-    if (pageGroup < totalGroups - 1) {
-      const newGroup = pageGroup + 1;
-      setPageGroup(newGroup);
-      onPageChange(newGroup * maxPagesToShow + 1);
+    if (targetPage >= 1 && targetPage <= totalPages && targetPage !== currentPage) {
+      onPageChange(targetPage);
     }
-  };
+  }, [totalPages, currentPage, onPageChange]);
 
-  // Nếu là mobile → hiển thị nút gọn
+  // --- GIAO DIỆN MOBILE (Nút Xem thêm) ---
   if (isMobile) {
+    const displayedItems = Math.min(currentPage * ITEMS_PER_PAGE, totalPages * ITEMS_PER_PAGE);
+    const totalItems = totalPages * ITEMS_PER_PAGE;
+
     return (
       <div className="toolbar-loadmore">
         <button
           className="toolbar-loadmore__button"
-          onClick={(e) => {
-            e.preventDefault();
-            if (currentPage < totalPages) {
-              onPageChange(currentPage + 1);
-            }
-          }}
+          disabled={currentPage >= totalPages}
+          onClick={(e) => handlePageAction(e, currentPage + 1)}
         >
-          Xem thêm
+          {currentPage >= totalPages ? "Đã hết sản phẩm" : "Xem thêm"}
         </button>
         <div className="toolbar-loadmore__text">
-          Hiển thị <span>{currentPage * maxPagesToShow}</span> trên tổng số{" "}
-          <span>{totalPages * maxPagesToShow}</span> sản phẩm
+          Hiển thị <span>{displayedItems}</span> trên tổng số{" "}
+          <span>{totalItems}</span> sản phẩm
         </div>
       </div>
     );
   }
 
-  // Nếu là desktop → hiển thị phân trang số
+  // --- GIAO DIỆN DESKTOP (Số trang) ---
   return (
     <div className="pagination">
+      {/* Nút lùi 1 trang */}
       <a
         href="#"
-        className="page-item first"
-        onClick={(e) => {
-          e.preventDefault();
-          if (currentPage > 1) {
-            if (currentPage === startPage) {
-              handlePrevGroup(e);
-            } else {
-              onPageChange(currentPage - 1);
-            }
-          }
-        }}
+        className={`page-item first ${currentPage === 1 ? "disabled" : ""}`}
+        onClick={(e) => handlePageAction(e, currentPage - 1)}
+        style={currentPage === 1 ? { pointerEvents: 'none', opacity: 0.5 } : {}}
       >
         &lt;
       </a>
 
-      {pages.map((p) => (
+      {/* Hiển thị danh sách số trang */}
+      {paginationData.pagesRange.map((p) => (
         <a
           href="#"
           key={p}
           className={`page-item ${currentPage === p ? "active" : ""}`}
-          onClick={(e) => {
-            e.preventDefault();
-            onPageChange(p);
-          }}
+          onClick={(e) => handlePageAction(e, p)}
         >
           {p}
         </a>
       ))}
 
+      {/* Nút tiến 1 trang */}
       <a
         href="#"
-        className="page-item last"
-        onClick={(e) => {
-          e.preventDefault();
-          if (currentPage < totalPages) {
-            if (currentPage === endPage) {
-              handleNextGroup(e);
-            } else {
-              onPageChange(currentPage + 1);
-            }
-          }
-        }}
+        className={`page-item last ${currentPage === totalPages ? "disabled" : ""}`}
+        onClick={(e) => handlePageAction(e, currentPage + 1)}
+        style={currentPage === totalPages ? { pointerEvents: 'none', opacity: 0.5 } : {}}
       >
         &gt;
       </a>

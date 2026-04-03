@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -7,288 +8,123 @@ type Category = {
   _id: string;
   name: string;
   slug?: string;
-  parentId?: string;
-  images?: string[];
   type?: string | null;
-  __v?: number;
 };
 
 const PARENTS_API = "https://fiyo-be.onrender.com/api/category/parents";
-const CHILDREN_API = (parentId: string) =>
-  `https://fiyo-be.onrender.com/api/category/children/${parentId}`;
+const CHILDREN_API = (parentId: string) => `https://fiyo-be.onrender.com/api/category/children/${parentId}`;
 
 const norm = (s?: string | null) => (s || "").toLowerCase().trim();
 
 export default function MenuComponent() {
   const pathname = usePathname();
-
   const [parents, setParents] = useState<Category[]>([]);
-  const [subs, setSubs] = useState<Category[]>([]);
   const [activeParent, setActiveParent] = useState<string | null>(null);
-  const [loadingSubs, setLoadingSubs] = useState(false);
-  const [errorSubs, setErrorSubs] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  
+  // 1. Dùng Map để Cache danh mục con, tránh fetch lại khi người dùng hover qua lại
+  const [subsCache, setSubsCache] = useState<Record<string, Category[]>>({});
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  // -------- Fetch parents once --------
+  // -------- Fetch Parents (Chạy 1 lần duy nhất) --------
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    const fetchParents = async () => {
       try {
-        const res = await fetch(PARENTS_API, { cache: "no-store" });
+        const res = await fetch(PARENTS_API, { next: { revalidate: 3600 } }); // Cache 1 giờ
         const data = await res.json();
         const list: Category[] = Array.isArray(data) ? data : data?.data ?? [];
-        // ✅ Chỉ giữ những parent có slug hợp lệ
-        const cleaned = list.filter((p) => !!p.slug && norm(p.slug) !== "undefined");
-        if (mounted) setParents(cleaned);
-        console.log("[parents]", cleaned);
+        setParents(list.filter((p) => p.slug && norm(p.slug) !== "undefined"));
       } catch (e) {
-        console.error("Lỗi lấy danh mục cha:", e);
+        console.error("Menu: Lỗi tải danh mục cha", e);
       }
-    })();
-    return () => {
-      mounted = false;
     };
+    fetchParents();
   }, []);
 
-  // -------- Fetch subs when hover a parent --------
-  useEffect(() => {
-    if (!activeParent) {
-      setSubs([]);
-      setErrorSubs(null);
-      return;
+  // -------- Logic Fetch Subs với Caching --------
+  const handleMouseEnter = useCallback(async (parentId: string) => {
+    setActiveParent(parentId);
+
+    // Nếu đã có trong cache thì không fetch nữa
+    if (subsCache[parentId]) return;
+
+    setLoadingId(parentId);
+    try {
+      const res = await fetch(CHILDREN_API(parentId));
+      const data = await res.json();
+      const list: Category[] = Array.isArray(data) ? data : data?.data ?? [];
+      const cleaned = list.filter((c) => c.slug && norm(c.slug) !== "undefined");
+      
+      setSubsCache(prev => ({ ...prev, [parentId]: cleaned }));
+    } catch (e) {
+      console.error("Menu: Lỗi tải danh mục con", e);
+    } finally {
+      setLoadingId(null);
     }
+  }, [subsCache]);
 
-    setLoadingSubs(true);
-    setErrorSubs(null);
-
-    // cancel request cũ (nếu có)
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    (async () => {
-      try {
-        const res = await fetch(CHILDREN_API(activeParent), {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        const data = await res.json();
-        const list: Category[] = Array.isArray(data) ? data : data?.data ?? [];
-        // ✅ Chỉ giữ subs có slug hợp lệ
-        const cleanedSubs = list.filter((c) => !!c.slug && norm(c.slug) !== "undefined");
-        setSubs(cleanedSubs);
-        console.log(`[subs for ${activeParent}]`, cleanedSubs);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") {
-          console.error("Lỗi lấy danh mục con:", e);
-          setErrorSubs("Không lấy được danh mục con");
-        }
-      } finally {
-        setLoadingSubs(false);
-      }
-    })();
-
-    return () => controller.abort();
-  }, [activeParent]);
-
-  // -------- Derived lists --------
-  const nonAccessories = useMemo(
-    () => subs.filter((c) => norm(c.type) !== "accessory"),
-    [subs]
-  );
-  const accessories = useMemo(
-    () => subs.filter((c) => norm(c.type) === "accessory"),
-    [subs]
-  );
-
-  const half = Math.ceil(nonAccessories.length / 2);
+  // -------- Tối ưu lọc danh mục (Memoized) --------
+  const currentSubs = useMemo(() => (activeParent ? subsCache[activeParent] || [] : []), [activeParent, subsCache]);
+  
+  const { nonAccessories, accessories } = useMemo(() => {
+    return {
+      nonAccessories: currentSubs.filter(c => norm(c.type) !== "accessory"),
+      accessories: currentSubs.filter(c => norm(c.type) === "accessory")
+    };
+  }, [currentSubs]);
 
   return (
-    <div className="menu">
+    <nav className="menu">
       <ul className="menu__container">
-        {/* Mục cố định đầu */}
+        {/* Hàng mới */}
         <li className="menu__item">
-          <Link
-            href="/page/product"
-            className={`menu__item-link ${
-              pathname === "/page/product" ? "nuxt-link-active" : ""
-            }`}
-          >
-            <span>Tưng bừng hàng mới</span>
-          </Link>
+          <MenuLink href="/page/product" active={pathname === "/page/product"}>Tưng bừng hàng mới</MenuLink>
         </li>
 
-        {/* Mục động từ API (đã lọc parent không có slug) */}
+        {/* Categories động */}
         {parents.map((parent) => (
           <li
             key={parent._id}
             className="menu__item has-children"
-            onMouseEnter={() => setActiveParent(parent._id)}
-            onMouseLeave={() =>
-              setActiveParent((p) => (p === parent._id ? null : p))
-            }
+            onMouseEnter={() => handleMouseEnter(parent._id)}
+            onMouseLeave={() => setActiveParent(null)}
           >
-            <Link
-              href={`/page/categoryparent/${parent.slug}`}
-              className={`menu__item-link ${
-                pathname === `/page/categoryparent/${parent.slug}`
-                  ? "nuxt-link-active"
-                  : ""
-              }`}
+            <MenuLink 
+              href={`/page/categoryparent/${parent.slug}`} 
+              active={pathname.includes(parent.slug!)}
             >
-              <span>{parent.name}</span>
-            </Link>
+              {parent.name}
+            </MenuLink>
 
-            {/* Submenu */}
-            <div
-              className="menu__submenu"
-              style={{
-                display: activeParent === parent._id ? "block" : "none",
-                visibility: activeParent === parent._id ? "visible" : "hidden",
-                opacity: activeParent === parent._id ? 1 : 0,
-              }}
-            >
+            {/* Megamenu Submenu */}
+            <div className={`menu__submenu ${activeParent === parent._id ? "is-active" : ""}`}>
               <div className="menu__submenu-content">
-                {/* Cột trái */}
+                {/* Cột trái: Tĩnh */}
                 <div className="menu__submenu--left">
-                  <ul>
-                    <li>
-                      <Link href="/page/product">Sản phẩm mới</Link>
-                    </li>
-                  </ul>
-                  <ul>
-                    <li>
-                      <Link href="/page/sale">Giá tốt</Link>
-                    </li>
-                  </ul>
-                  <ul>
-                    <li>
-                      <Link href="/page/sale" style={{ color: "rgb(218,41,28)" }}>
-                        Siêu sale ngày đôi
-                      </Link>
-                    </li>
-                  </ul>
+                   <ul className="quick-links">
+                     <li><Link href="/page/product">Sản phẩm mới</Link></li>
+                     <li><Link href="/page/sale">Giá tốt</Link></li>
+                     <li><Link href="/page/sale" style={{ color: "#da291c" }}>Siêu sale ngày đôi</Link></li>
+                   </ul>
                 </div>
 
-                {/* Cột giữa: Danh mục sản phẩm (loại accessory) */}
+                {/* Cột giữa: Danh mục (Phân 2 cột) */}
                 <div className="menu__submenu--mid">
-                  <div className="menu__submenu-cat">
-                    <div className="menu__submenu-title">
-                      <span>Danh mục sản phẩm</span>
+                  <div className="menu__submenu-title">Danh mục sản phẩm</div>
+                  {loadingId === parent._id ? <div className="loader">Đang tải...</div> : (
+                    <div className="menu__submenu-grid">
+                       <SubList items={nonAccessories.slice(0, Math.ceil(nonAccessories.length / 2))} parentSlug={parent.slug!} />
+                       <SubList items={nonAccessories.slice(Math.ceil(nonAccessories.length / 2))} parentSlug={parent.slug!} />
                     </div>
-
-                    {activeParent === parent._id && (
-                      <div className="menu__submenu-cat-content">
-                        {loadingSubs && <div style={{ padding: 8 }}>Đang tải…</div>}
-                        {errorSubs && (
-                          <div style={{ color: "red", padding: 8 }}>{errorSubs}</div>
-                        )}
-
-                        {!loadingSubs && !errorSubs && (
-                          <>
-                            <ul>
-                              {nonAccessories.slice(0, half).map((child) => (
-                                <li key={child._id}>
-                                  <Link
-                                    href={`/page/category/${parent.slug}/${child.slug}`}
-                                  >
-                                    {child.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-
-                            <ul>
-                              {nonAccessories.slice(half).map((child) => (
-                                <li key={child._id}>
-                                  <Link
-                                    href={`/page/category/${parent.slug}/${child.slug}`}
-                                  >
-                                    {child.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Cột phải */}
+                {/* Cột phải: Phụ kiện & Ảnh */}
                 <div className="menu__submenu--right">
-                  {/* PHỤ KIỆN */}
-                  <div className="menu__submenu-cat">
-                    <div className="menu__submenu-title">
-                      <span>Phụ kiện</span>
-                    </div>
-
-                    {activeParent === parent._id && (
-                      <div className="menu__submenu-cat-content">
-                        {loadingSubs && <div style={{ padding: 8 }}>Đang tải…</div>}
-                        {!loadingSubs && (
-                          <ul>
-                            {accessories.length > 0 ? (
-                              accessories.map((child) => (
-                                <li key={child._id}>
-                                  <Link
-                                    href={`/page/category/${parent.slug}/${child.slug}`}
-                                  >
-                                    {child.name}
-                                  </Link>
-                                </li>
-                              ))
-                            ) : (
-                              <li style={{ color: "#74869b" }}>Chưa có phụ kiện</li>
-                            )}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* GỢI Ý NHANH */}
-                  <div className="menu__submenu-cat">
-                    <div className="menu__submenu-title">
-                      <span>Gợi ý nhanh</span>
-                    </div>
-                    <div className="menu__submenu-cat-content">
-                      <ul>
-                        <li>
-                          <Link href="/page/product">Mới ra mắt</Link>
-                        </li>
-                        <li>
-                          <Link href="/page/hot">Đang hot</Link>
-                        </li>
-                        <li>
-                          <Link href="/page/199k">Giá dưới 199K</Link>
-                        </li>
-                        <li>
-                          <Link href="/page/best-selling">Bán chạy nhất</Link>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* HÌNH ẢNH */}
+                  <div className="menu__submenu-title">Phụ kiện</div>
+                  <SubList items={accessories} parentSlug={parent.slug!} emptyLabel="Chưa có phụ kiện" />
+                  
                   <div className="menu__submenu-images">
-                    <span className="images">
-                      <img
-                        width={203}
-                        height={274}
-                        src="https://media.canifa.com/mega_menu/item/Nu-1-menu-05Mar.webp"
-                        alt="image"
-                      />
-                    </span>
-                    <span className="images">
-                      <img
-                        width={203}
-                        height={274}
-                        src="https://media.canifa.com/mega_menu/item/Nu-1-menu-05Mar.webp"
-                        alt="image"
-                      />
-                    </span>
+                    <img src="https://media.canifa.com/mega_menu/item/Nu-1-menu-05Mar.webp" alt="Promo" width={203} height={274} loading="lazy" />
                   </div>
                 </div>
               </div>
@@ -296,18 +132,34 @@ export default function MenuComponent() {
           </li>
         ))}
 
-        {/* Mục cố định cuối */}
+        {/* Siêu sale */}
         <li className="menu__item">
-          <Link
-            href="/page/sale"
-            className={`menu__item-link ${
-              pathname === "/bst-em-oi-em-a" ? "nuxt-link-active" : ""
-            }`}
-          >
-            <span>SIÊU SALE MÙA HÈ</span>
-          </Link>
+          <MenuLink href="/page/sale" active={pathname === "/page/sale"}>SIÊU SALE MÙA HÈ</MenuLink>
         </li>
       </ul>
-    </div>
+    </nav>
+  );
+}
+
+// -------- Sub-components để sạch code --------
+
+function MenuLink({ href, active, children }: any) {
+  return (
+    <Link href={href} className={`menu__item-link ${active ? "nuxt-link-active" : ""}`}>
+      <span>{children}</span>
+    </Link>
+  );
+}
+
+function SubList({ items, parentSlug, emptyLabel }: any) {
+  if (items.length === 0 && emptyLabel) return <p className="empty-msg">{emptyLabel}</p>;
+  return (
+    <ul>
+      {items.map((item: any) => (
+        <li key={item._id}>
+          <Link href={`/page/category/${parentSlug}/${item.slug}`}>{item.name}</Link>
+        </li>
+      ))}
+    </ul>
   );
 }

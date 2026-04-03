@@ -88,7 +88,7 @@ export default function Home() {
 
         {/* Ưu đãi */}
         <div className="title-home">
-          <h2>ƯU ĐÃI NỔI BẬC</h2>
+          <h2>ƯU ĐÃI NỔI BẬT</h2>
         </div>
         <VoucherSection />
         <CollectionSection />

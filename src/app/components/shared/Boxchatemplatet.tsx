@@ -1,218 +1,180 @@
 'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import '@/app/assets/css/boxchat.css';
 
+interface Message {
+  id: string;
+  sender: "user" | "bot";
+  text: string;
+  time?: string;
+  isImage?: boolean;
+}
+
 export default function BoxChatComponent() {
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const sendBtnRef = useRef<HTMLButtonElement>(null);
-  const emojiBtnRef = useRef<HTMLButtonElement>(null);
+  // --- States ---
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  
+  // --- Refs ---
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatListRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const wrapperState0Ref = useRef<HTMLDivElement>(null);
-  const wrapperState1Ref = useRef<HTMLDivElement>(null);
-  const btnStartChatRef = useRef<HTMLDivElement>(null);
-  const btnCloseRef = useRef<HTMLButtonElement>(null);
-  const chatListRef = useRef<HTMLUListElement>(null);
-
-  const notifCloseBtnRef = useRef<HTMLButtonElement>(null); // ✅ NEW
-
-  const headerHeight = 133;
-
-  useEffect(() => {
-    const wrapper0 = wrapperState0Ref.current;
-    const wrapper1 = wrapperState1Ref.current;
-    const btnStart = btnStartChatRef.current;
-    const btnClose = btnCloseRef.current;
-    const notifCloseBtn = notifCloseBtnRef.current; // ✅ NEW
-
-    if (wrapper0 && wrapper1 && btnStart && btnClose) {
-      wrapper0.style.display = "block";
-      wrapper1.style.display = "none";
-
-      btnStart.onclick = () => {
-        wrapper0.style.display = "none";
-        wrapper1.style.display = "block";
-      };
-
-      btnClose.onclick = () => {
-        wrapper1.style.display = "none";
-        wrapper0.style.display = "block";
-      };
-    }
-
-    if (notifCloseBtn && wrapper0) {
-      notifCloseBtn.onclick = () => {
-        wrapper0.style.display = "none"; // ✅ Ẩn luôn state-0
-      };
-    }
-
-    const input = inputRef.current;
-    const sendBtn = sendBtnRef.current;
-    if (input && sendBtn) {
-      const handleInput = () => {
-        input.style.height = "auto";
-        input.style.height = input.scrollHeight + "px";
-        sendBtn.classList.toggle("hidden", !input.value.trim());
-      };
-      input.addEventListener("input", handleInput);
-
-      return () => {
-        input.removeEventListener("input", handleInput);
-      };
+  // --- Helpers ---
+  const scrollToBottom = useCallback(() => {
+    if (chatListRef.current) {
+      chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
     }
   }, []);
 
   useEffect(() => {
-    const input = inputRef.current!;
-    const sendBtn = sendBtnRef.current!;
-    const emojiBtn = emojiBtnRef.current!;
-    const fileInput = fileInputRef.current!;
-    const chatList = chatListRef.current!;
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
-    const addMessage = (sender: "user" | "bot", text: string, showTime = false) => {
-      const msg = document.createElement("li");
-      msg.className = `chat-item ${sender === "user" ? "visitor" : "bot"}`;
-      const avatarHTML = sender === "bot"
-        ? `<div class="avatar-name-msg-item"><div><span class="ant-avatar messages-item-avatar ant-avatar-circle ant-avatar-image" style="width: 32px; height: 32px; line-height: 32px; font-size: 18px"><img src="https://api.oncustomer.canifa.com/user/file/10dbc370-8b4b-11ee-bcfa-1bc0639711b2.png" /></span></div><div class="agent-name">CANIFA</div></div>`
-        : "";
-      msg.innerHTML = `
-        <div class="messages-item-inner">
-          ${avatarHTML}
-          <div class="message-content-wrapper">
-            <div class="message-content has-photo-false">
-              <span class="content-item">${text}</span>
-            </div>
-          </div>
-          ${
-            showTime
-              ? `<div class="message-status"><div class="message-time">${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div></div>`
-              : ""
-          }
-        </div>`;
-      chatList.appendChild(msg);
-      chatList.scrollTop = chatList.scrollHeight;
-    };
+  // Tự động giãn chiều cao textarea
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const target = e.target;
+    target.style.height = "auto";
+    target.style.height = `${target.scrollHeight}px`;
+    setInputValue(target.value);
+  };
 
-    sendBtn.onclick = () => {
-      const text = input.value.trim();
-      if (text) {
-        input.value = "";
-        input.style.height = "auto";
-        sendBtn.classList.add("hidden");
-        addMessage("user", text, true);
-        setTimeout(() => {
-          addMessage("bot", "Cảm ơn bạn đã nhắn!", false);
-        }, 1000);
-      }
+  const addMessage = (sender: "user" | "bot", text: string, isImage = false) => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      sender,
+      text,
+      isImage,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     };
+    setMessages(prev => [...prev, newMessage]);
 
-    emojiBtn.onclick = () => {
-      input.value += "😊";
-      input.dispatchEvent(new Event("input"));
-    };
+    if (sender === "user") {
+      // Bot phản hồi giả lập
+      setTimeout(() => {
+        addMessage("bot", "Cảm ơn bạn đã nhắn tin cho FIYO! Chúng tôi sẽ phản hồi sớm nhất.");
+      }, 1000);
+    }
+  };
 
-    fileInput.onchange = () => {
-      const file = fileInput.files?.[0];
-      if (!file) return;
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imgHTML = `<img src="${e.target?.result}" style="max-width: 200px; border-radius: 8px;" alt="${file.name}" />`;
-          addMessage("user", imgHTML, true);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        addMessage("user", `📎 Đã gửi file: ${file.name}`, true);
-      }
-    };
-  }, []);
+  const handleSend = () => {
+    if (!inputValue.trim()) return;
+    addMessage("user", inputValue);
+    setInputValue("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        addMessage("user", event.target?.result as string, true);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      addMessage("user", `📎 File: ${file.name}`);
+    }
+  };
 
   return (
     <div>
-      {/* Box chat thu gọn */}
-      <div className="chat-wrapper state-0" ref={wrapperState0Ref}>
-        <div id="popup" className="popup">
-          <span className="show-number">2</span>
-          <div style={{ paddingBottom: 8 }}>
-            <div className="close-notif">
-            
-            </div>
-            <ul className="list-message" style={{ maxHeight: 995 }}>
-         
-        
-            </ul>
+      {/* State 0: Thu gọn */}
+      {!isOpen && (
+        <div className="chat-wrapper state-0">
+          <div className="popup">
+            <span className="show-number">{messages.length > 0 ? 1 : 2}</span>
+          </div>
+          <div className="btn-start-chat theme-color-bg-non-hover appear" onClick={() => setIsOpen(true)}>
+            <div className="icon show-widget" />
           </div>
         </div>
-        <div id="btn-start-chat" className="btn-start-chat theme-color-bg-non-hover appear" ref={btnStartChatRef}>
-          <div className="icon show-widget" />
-        </div>
-      </div>
+      )}
 
-      {/* Box chat mở rộng */}
-      <div className="chat-wrapper state-1" ref={wrapperState1Ref}>
-        <div className="btn-start-chat theme-color-bg-non-hover">
-          <div className="icon show-widget" />
-        </div>
-        <div className="chat-wrapper-inner" style={{ transition: "transform 0.3s ease-in-out, opacity 0.3s ease-in-out", opacity: 1, transform: "translateY(0px)" }}>
+      {/* State 1: Mở rộng */}
+      <div className={`chat-wrapper state-1 ${isOpen ? 'active' : 'hidden'}`} 
+           style={{ display: isOpen ? 'block' : 'none', opacity: isOpen ? 1 : 0 }}>
+        
+        <div className="chat-wrapper-inner">
           <div className="chat-close-wrapper">
-            <button className="chat-close-button" ref={btnCloseRef}>
-              <img src="https://widget.oncustomer.canifa.com/images/icon-close.svg" width={9} />
+            <button className="chat-close-button" onClick={() => setIsOpen(false)}>
+              <img src="https://widget.oncustomer.canifa.com/images/icon-close.svg" width={9} alt="close" />
             </button>
           </div>
+
           <div className="conversation">
             <div className="chat-main-frame">
-              <div className="chat-header livechat theme-color-bg-non-hover" style={{ height: 75 }}>
+              <div className="chat-header theme-color-bg-non-hover" style={{ height: 75 }}>
                 <div className="widget-header">
-                    
-                  <div className="main-content-inner minimized">
-                    <div className="new-conversation-header">
-                      <div className="description-group">
-                        <h3 className="title margin-0 title-2">CHAT BOT FIYO</h3>
-                        <p className="sub-title">Hãy hỏi bất cứ điều gì hoặc chia sẻ phản hồi của bạn liên quan đến SP &amp; DV của Canifa.</p>
+                  <h3 className="title margin-0 title-2">CHAT BOT FIYO</h3>
+                  <p className="sub-title">Chúng tôi luôn sẵn sàng hỗ trợ bạn.</p>
+                </div>
+              </div>
+
+              {/* Danh sách tin nhắn */}
+              <div className="chat-content list-conversation under-header-view" 
+                   ref={chatListRef}
+                   style={{ height: '350px', overflowY: 'auto' }}>
+                <ul className="message-list">
+                  {messages.map((msg) => (
+                    <li key={msg.id} className={`chat-item ${msg.sender === "user" ? "visitor" : "bot"}`}>
+                      <div className="messages-item-inner">
+                        {msg.sender === "bot" && (
+                          <div className="avatar-name-msg-item">
+                            <span className="ant-avatar messages-item-avatar">
+                              <img src="https://api.oncustomer.canifa.com/user/file/10dbc370-8b4b-11ee-bcfa-1bc0639711b2.png" alt="bot" />
+                            </span>
+                            <div className="agent-name">CANIFA</div>
+                          </div>
+                        )}
+                        <div className="message-content-wrapper">
+                          <div className="message-content">
+                            {msg.isImage ? (
+                              <img src={msg.text} style={{ maxWeight: '200px', borderRadius: 8 }} alt="upload" />
+                            ) : (
+                              <span className="content-item">{msg.text}</span>
+                            )}
+                          </div>
+                          {msg.sender === "user" && <div className="message-time">{msg.time}</div>}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              {/* Nội dung tin nhắn */}
-              <div className="chat-content list-conversation under-header-view" style={{ height: `calc(100% - ${headerHeight}px)` }}>
-                <div className="chat-content-inner">
-                  <ul className="message-list" ref={chatListRef}></ul>
-                </div>
-              </div>
-
-              {/* Nhập tin nhắn */}
-              <div className="input-box input-status-undefined">
+              {/* Ô nhập liệu */}
+              <div className="input-box">
                 <div className="place-input">
                   <textarea
+                    ref={textareaRef}
                     className="ant-input main-input"
-                    placeholder="Nhập tin nhắn"
-                    style={{ height: "auto", minHeight: 57, maxHeight: 300, overflowY: "auto", resize: "none" }}
-                    ref={inputRef}
+                    placeholder="Nhập tin nhắn..."
+                    value={inputValue}
+                    onChange={handleInput}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                    style={{ resize: "none" }}
                   />
-                  <div className="composer-button" style={{ alignItems: "center" }}>
-                    <span>
-                      <div className="ant-upload ant-upload-select ant-upload-select-text">
-                        <span className="ant-upload" role="button">
-                          <input type="file" accept=".png,.jpg,.jpeg,.doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx,.mp4,.mkv,.zip" multiple style={{ display: "none" }} ref={fileInputRef} />
-                          <button type="button" className="ant-btn reply-tool-icon no-border">
-                            <img src="https://widget.oncustomer.canifa.com/images/icon-attachment.png" />
-                          </button>
-                        </span>
-                      </div>
-                    </span>
-                    <button type="button" className="ant-btn reply-tool-icon no-border" ref={emojiBtnRef}>
-                      <img src="https://widget.oncustomer.canifa.com/images/icon-emoji.svg" />
+                  <div className="composer-button">
+                    <input type="file" hidden ref={fileInputRef} onChange={handleFileChange} />
+                    <button onClick={() => fileInputRef.current?.click()} className="reply-tool-icon">
+                      <img src="https://widget.oncustomer.canifa.com/images/icon-attachment.png" alt="file" />
                     </button>
-                    <button type="button" className="ant-btn reply-tool-icon no-border hidden" style={{ marginLeft: 8 }} ref={sendBtnRef}>
-                      <img src="https://cdn-icons-png.flaticon.com/512/724/724954.png" width={20} />
+                    <button onClick={() => setInputValue(prev => prev + "😊")} className="reply-tool-icon">
+                      <img src="https://widget.oncustomer.canifa.com/images/icon-emoji.svg" alt="emoji" />
                     </button>
+                    {inputValue.trim() && (
+                      <button onClick={handleSend} className="reply-tool-icon">
+                        <img src="https://cdn-icons-png.flaticon.com/512/724/724954.png" width={20} alt="send" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
-              {/* Kết thúc nhập */}
             </div>
           </div>
         </div>
